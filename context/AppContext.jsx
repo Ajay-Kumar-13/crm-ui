@@ -41,14 +41,19 @@ export const AppProvider = ({ children }) => {
       setNotifications(MOCK_NOTIFICATIONS);
     } else {
       setUsers(crm_users);
+      setLeads(MOCK_LEADS);
+      setCompanies(MOCK_COMPANIES);
+      setAuthorities(MOCK_AUTHORITIES);
+      setRoles(MOCK_ROLES);
+      setNotifications(MOCK_NOTIFICATIONS);
     }
-  }, []);
+  }, [crm_users]);
 
   const login = async (username) => {
     if (backendError) throw new Error('Backend Down');
 
     const foundUser = users.find((u) => u.username === username);
-    if (foundUser && foundUser.isActive) {
+    if (foundUser && foundUser.accountActive) {
       setUser(foundUser);
       return true;
     }

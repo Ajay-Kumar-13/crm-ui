@@ -44,19 +44,11 @@ export const MOCK_ROLES = [
 
 export const MOCK_USERS = [
   {
-    id: 'u1',
-    name: 'Super Admin',
-    username: 'super',
-    role: 'SUPERUSER',
-    isActive: true,
-    authorities: MOCK_ROLES[0].authorities,
-  },
-  {
     id: 'u2',
     name: 'Admin User',
     username: 'admin',
     role: 'ADMIN',
-    isActive: true,
+    accountActive: true,
     authorities: MOCK_ROLES[1].authorities,
   },
   {
@@ -64,7 +56,7 @@ export const MOCK_USERS = [
     name: 'John Doe',
     username: 'emp1',
     role: 'EMPLOYEE',
-    isActive: true,
+    accountActive: true,
     authorities: MOCK_ROLES[2].authorities,
   },
   {
@@ -72,7 +64,7 @@ export const MOCK_USERS = [
     name: 'Jane Smith',
     username: 'emp2',
     role: 'EMPLOYEE',
-    isActive: false,
+    accountActive: false,
     authorities: MOCK_ROLES[2].authorities,
   },
 ];
