@@ -20,11 +20,11 @@ const UsersPage = () => {
   const [statusFilter, setStatusFilter] = useState('ALL');
 
   const [userForm, setUserForm] = useState({
-    name: '',
     username: '',
-    role: 'EMPLOYEE',
+    email: '',
+    role: null,
     authorities: [],
-    isActive: true,
+    accountActive: true,
   });
   const [roleForm, setRoleForm] = useState({ name: '', description: '', authorities: [] });
   const [authForm, setAuthForm] = useState({ name: '', description: '' });
@@ -33,16 +33,27 @@ const UsersPage = () => {
     setAuthSearchTerm('');
     if (user) {
       setEditingUser(user);
-      setUserForm(user);
+      setUserForm({
+        username: user.username || '',
+        email: user.email || '',
+        role: user.role || null,
+        authorities: user.authorities || [],
+        accountActive: user.accountActive,
+      });
     } else {
       setEditingUser(null);
       const defaultRole = roles.find((r) => r.name === 'EMPLOYEE');
       setUserForm({
-        name: '',
         username: '',
-        role: 'EMPLOYEE',
-        authorities: defaultRole ? [...defaultRole.authorities] : [],
-        isActive: true,
+        email: '',
+        role: defaultRole ? { id: defaultRole.id, name: defaultRole.name } : null,
+        authorities: defaultRole
+          ? (defaultRole.authorities || [])
+              .map((authName) => authorities.find((a) => a.name === authName))
+              .filter(Boolean)
+              .map((a) => ({ id: a.id, name: a.name }))
+          : [],
+        accountActive: true,
       });
     }
     setIsUserModalOpen(true);
@@ -50,27 +61,36 @@ const UsersPage = () => {
 
   const handleSaveUser = (e) => {
     e.preventDefault();
+    const payload = {
+      username: userForm.username,
+      email: userForm.email,
+      role: userForm.role,
+      authorities: userForm.authorities,
+      accountActive: userForm.accountActive,
+    };
+
     if (editingUser) {
-      updateUser(editingUser.id, userForm);
+      updateUser(editingUser.id, payload);
     } else {
       addUser({
-        ...userForm,
-        id: `u${Date.now()}`,
+        id: `u-${Date.now()}`,
+        ...payload,
       });
     }
     setIsUserModalOpen(false);
   };
 
   const toggleUserStatus = (user) => {
-    updateUser(user.id, { isActive: !user.isActive });
+    updateUser(user.id, { accountActive: !user.accountActive });
   };
 
-  const handleUserAuthChange = (authName) => {
+  const handleUserAuthChange = (auth) => {
     const current = userForm.authorities || [];
-    if (current.includes(authName)) {
-      setUserForm({ ...userForm, authorities: current.filter((a) => a !== authName) });
+    const exists = current.some((a) => a.id === auth.id);
+    if (exists) {
+      setUserForm({ ...userForm, authorities: current.filter((a) => a.id !== auth.id) });
     } else {
-      setUserForm({ ...userForm, authorities: [...current, authName] });
+      setUserForm({ ...userForm, authorities: [...current, { id: auth.id, name: auth.name }] });
     }
   };
 
@@ -118,9 +138,11 @@ const UsersPage = () => {
 
   const filteredUsers = users.filter((u) => {
     const matchesSearch =
-      u.name.toLowerCase().includes(userSearch.toLowerCase()) || u.username.toLowerCase().includes(userSearch.toLowerCase());
-    const matchesRole = roleFilter === 'ALL' || u.role === roleFilter;
-    const matchesStatus = statusFilter === 'ALL' ? true : statusFilter === 'ACTIVE' ? u.isActive : !u.isActive;
+      u.username.toLowerCase().includes(userSearch.toLowerCase()) ||
+      (u.email || '').toLowerCase().includes(userSearch.toLowerCase());
+    const matchesRole = roleFilter === 'ALL' || u.role?.name === roleFilter;
+    const matchesStatus =
+      statusFilter === 'ALL' ? true : statusFilter === 'ACTIVE' ? u.accountActive : !u.accountActive;
     return matchesSearch && matchesRole && matchesStatus;
   });
 
@@ -141,7 +163,7 @@ const UsersPage = () => {
           >
             Roles
           </button>
-          {currentUser?.role === 'SUPERUSER' && (
+          {currentUser?.role?.name === 'SUPERUSER' && (
             <button
               onClick={() => setActiveTab('authorities')}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'authorities' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
@@ -210,14 +232,24 @@ const UsersPage = () => {
                     filteredUsers.map((u) => (
                       <tr key={u.id} className="hover:bg-slate-50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-slate-900">{u.name}</div>
-                          <div className="text-sm text-slate-500">@{u.username}</div>
+                          <div className="text-sm font-medium text-slate-900">{u.username}</div>
+                          <div className="text-sm text-slate-500">{u.email || '-'}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <Badge color={u.role === 'SUPERUSER' ? 'red' : u.role === 'ADMIN' ? 'blue' : 'green'}>{u.role}</Badge>
+                          <Badge
+                            color={
+                              u.role?.name === 'SUPERUSER'
+                                ? 'red'
+                                : u.role?.name === 'ADMIN'
+                                ? 'blue'
+                                : 'green'
+                            }
+                          >
+                            {u.role?.name}
+                          </Badge>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {u.isActive ? (
+                          {u.accountActive ? (
                             <span className="flex items-center text-green-600 text-sm">
                               <CheckCircle className="w-4 h-4 mr-1" /> Active
                             </span>
@@ -231,10 +263,10 @@ const UsersPage = () => {
                           <div className="flex flex-wrap gap-1 max-w-xs items-center">
                             {u.authorities.slice(0, 2).map((auth) => (
                               <span
-                                key={auth}
+                                key={auth.id || auth.name}
                                 className="inline-block px-2 py-0.5 rounded text-[10px] bg-slate-100 border border-slate-200 text-slate-600"
                               >
-                                {auth}
+                                {auth.name}
                               </span>
                             ))}
                             {u.authorities.length > 2 && (
@@ -262,7 +294,7 @@ const UsersPage = () => {
                           </button>
                           <button
                             onClick={() => toggleUserStatus(u)}
-                            className={`${u.isActive ? 'text-red-600' : 'text-green-600'} hover:opacity-80`}
+                            className={`${u.accountActive ? 'text-red-600' : 'text-green-600'} hover:opacity-80`}
                           >
                             <Power className="w-4 h-4" />
                           </button>
@@ -317,7 +349,7 @@ const UsersPage = () => {
         </div>
       )}
 
-      {activeTab === 'authorities' && currentUser?.role === 'SUPERUSER' && (
+      {activeTab === 'authorities' && currentUser?.role?.name === 'SUPERUSER' && (
         <div className="space-y-4">
           <div className="flex justify-end">
             <Button onClick={() => setIsAuthModalOpen(true)}>
@@ -353,20 +385,18 @@ const UsersPage = () => {
             <div className="flex justify-between items-center mb-4 pb-4 border-b">
               <div>
                 <h2 className="text-xl font-bold text-slate-800">Assigned Authorities</h2>
-                <p className="text-sm text-slate-500">
-                  for {viewAuthUser.name} (@{viewAuthUser.username})
-                </p>
+                <p className="text-sm text-slate-500">for @{viewAuthUser.username}</p>
               </div>
               <button onClick={() => setViewAuthUser(null)} className="text-slate-400 hover:text-slate-700">
                 <X className="w-6 h-6" />
               </button>
             </div>
             <div className="max-h-[60vh] overflow-y-auto">
-              {viewAuthUser.authorities.length > 0 ? (
+                  {viewAuthUser.authorities.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
-                  {viewAuthUser.authorities.map((auth, idx) => (
-                    <Badge key={idx} color="blue">
-                      {auth}
+                  {viewAuthUser.authorities.map((auth) => (
+                    <Badge key={auth.id || auth.name} color="blue">
+                      {auth.name}
                     </Badge>
                   ))}
                 </div>
@@ -390,13 +420,6 @@ const UsersPage = () => {
             </h2>
             <form onSubmit={handleSaveUser}>
               <Input
-                label="Full Name"
-                value={userForm.name}
-                onChange={(e) => setUserForm({ ...userForm, name: e.target.value })}
-                required
-                placeholder="Jane Doe"
-              />
-              <Input
                 label="Username"
                 value={userForm.username}
                 onChange={(e) => setUserForm({ ...userForm, username: e.target.value })}
@@ -404,26 +427,39 @@ const UsersPage = () => {
                 disabled={!!editingUser}
                 placeholder="janedoe"
               />
+              <Input
+                label="Email"
+                type="email"
+                value={userForm.email}
+                onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
+                required
+                placeholder="jane@example.com"
+              />
               <Select
                 label="Role"
-                value={userForm.role}
+                value={userForm.role?.id || ''}
                 onChange={(e) => {
-                  const newRole = e.target.value;
-                  const roleDef = roles.find((r) => r.name === newRole);
+                  const newRoleId = e.target.value;
+                  const roleDef = roles.find((r) => r.id === newRoleId);
                   setUserForm({
                     ...userForm,
-                    role: newRole,
-                    authorities: roleDef ? [...roleDef.authorities] : [],
+                    role: roleDef ? { id: roleDef.id, name: roleDef.name } : null,
+                    authorities: roleDef
+                      ? (roleDef.authorities || [])
+                          .map((authName) => authorities.find((a) => a.name === authName))
+                          .filter(Boolean)
+                          .map((a) => ({ id: a.id, name: a.name }))
+                      : [],
                   });
                 }}
-                options={roles.map((r) => ({ value: r.name, label: r.name }))}
+                options={roles.map((r) => ({ value: r.id, label: r.name }))}
               />
 
               <div className="mb-4">
                 <Checkbox
                   label="Account Active"
-                  checked={userForm.isActive}
-                  onChange={(e) => setUserForm({ ...userForm, isActive: e.target.checked })}
+                  checked={userForm.accountActive}
+                  onChange={(e) => setUserForm({ ...userForm, accountActive: e.target.checked })}
                 />
               </div>
 
@@ -445,8 +481,8 @@ const UsersPage = () => {
                       <Checkbox
                         key={auth.id}
                         label={auth.name}
-                        checked={userForm.authorities?.includes(auth.name)}
-                        onChange={() => handleUserAuthChange(auth.name)}
+                        checked={userForm.authorities?.some((a) => a.id === auth.id)}
+                        onChange={() => handleUserAuthChange(auth)}
                         title={auth.description}
                       />
                     ))

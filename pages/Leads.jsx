@@ -30,7 +30,7 @@ const LeadsPage = () => {
       l.companyName.toLowerCase().includes(filter.toLowerCase()) ||
       l.contactName.toLowerCase().includes(filter.toLowerCase());
     const matchesStatus = statusFilter === 'ALL' || l.status === statusFilter;
-    const matchesAssignment = user?.role === 'EMPLOYEE' ? l.assignedToUserId === user.id : true;
+    const matchesAssignment = user?.role?.name === 'EMPLOYEE' ? l.assignedToUserId === user.id : true;
     return matchesSearch && matchesStatus && matchesAssignment;
   });
 
@@ -68,16 +68,19 @@ const LeadsPage = () => {
 
   const availableUsers = users.filter(
     (u) =>
-      u.isActive &&
-      (u.role === 'EMPLOYEE' || u.role === 'ADMIN') &&
-      (u.name.toLowerCase().includes(userSearchTerm.toLowerCase()) || u.username.toLowerCase().includes(userSearchTerm.toLowerCase()))
+      u.accountActive &&
+      (u.role?.name === 'EMPLOYEE' || u.role?.name === 'ADMIN') &&
+      (u.username.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+        (u.email || '').toLowerCase().includes(userSearchTerm.toLowerCase()))
   );
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-        <h1 className="text-2xl font-bold text-slate-800">{user?.role === 'EMPLOYEE' ? 'My Leads' : 'All Leads'}</h1>
-        {(user?.role === 'ADMIN' || user?.role === 'SUPERUSER') && (
+        <h1 className="text-2xl font-bold text-slate-800">
+          {user?.role?.name === 'EMPLOYEE' ? 'My Leads' : 'All Leads'}
+        </h1>
+        {(user?.role?.name === 'ADMIN' || user?.role?.name === 'SUPERUSER') && (
           <Button variant="outline" onClick={handleImport}>
             <FileSpreadsheet className="w-4 h-4 mr-2" /> Import Excel
           </Button>
@@ -132,7 +135,7 @@ const LeadsPage = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-700">${lead.value.toLocaleString()}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {user?.role === 'EMPLOYEE' ? (
+                    {user?.role?.name === 'EMPLOYEE' ? (
                       <div className="relative">
                         <select
                           value={lead.status}
@@ -160,7 +163,7 @@ const LeadsPage = () => {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {user?.role === 'ADMIN' || user?.role === 'SUPERUSER' ? (
+                    {user?.role?.name === 'ADMIN' || user?.role?.name === 'SUPERUSER' ? (
                       <button
                         onClick={() => openAssignmentModal(lead.id)}
                         className="flex items-center space-x-2 text-sm text-slate-700 hover:text-blue-600 px-3 py-1.5 rounded border border-transparent hover:border-blue-200 hover:bg-blue-50 transition-all"
@@ -171,10 +174,10 @@ const LeadsPage = () => {
                     ) : (
                       <div className="flex items-center">
                         <div className="h-6 w-6 rounded-full bg-slate-200 flex items-center justify-center text-xs text-slate-600 font-bold mr-2">
-                          {users.find((u) => u.id === lead.assignedToUserId)?.name?.charAt(0) || '?'}
+                          {users.find((u) => u.id === lead.assignedToUserId)?.username?.charAt(0)?.toUpperCase() || '?'}
                         </div>
                         <span className="text-sm text-slate-600">
-                          {users.find((u) => u.id === lead.assignedToUserId)?.name || 'Unassigned'}
+                          {users.find((u) => u.id === lead.assignedToUserId)?.username || 'Unassigned'}
                         </span>
                       </div>
                     )}
@@ -216,7 +219,7 @@ const LeadsPage = () => {
             </div>
 
             <div className="flex-1 overflow-y-auto border border-slate-100 rounded-md">
-              {availableUsers.length > 0 ? (
+                {availableUsers.length > 0 ? (
                 availableUsers.map((u) => (
                   <button
                     key={u.id}
@@ -225,11 +228,13 @@ const LeadsPage = () => {
                   >
                     <div className="flex items-center">
                       <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold mr-3">
-                        {u.name.charAt(0)}
+                        {u.username?.charAt(0)?.toUpperCase()}
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-slate-800">{u.name}</p>
-                        <p className="text-xs text-slate-500">@{u.username} • {u.role}</p>
+                        <p className="text-sm font-medium text-slate-800">{u.username}</p>
+                        <p className="text-xs text-slate-500">
+                          {u.email || 'No email'} • {u.role?.name}
+                        </p>
                       </div>
                     </div>
                     <span className="text-xs text-blue-600 opacity-0 group-hover:opacity-100 font-medium">Assign</span>

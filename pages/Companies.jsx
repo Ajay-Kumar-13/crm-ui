@@ -14,7 +14,7 @@ const CompaniesPage = () => {
   const [selectedAdminId, setSelectedAdminId] = useState(null);
   const [messageText, setMessageText] = useState('');
 
-  const adminUsers = users.filter((u) => u.role === 'ADMIN');
+  const adminUsers = users.filter((u) => u.role?.name === 'ADMIN');
 
   const handleAdd = (e) => {
     e.preventDefault();
@@ -91,7 +91,7 @@ const CompaniesPage = () => {
                 onChange={(e) => setNewCompany({ ...newCompany, adminId: e.target.value })}
                 options={[
                   { value: '', label: 'Select an Admin...' },
-                  ...adminUsers.map((u) => ({ value: u.id, label: u.name })),
+                  ...adminUsers.map((u) => ({ value: u.id, label: u.username })),
                 ]}
               />
             </div>
@@ -128,7 +128,7 @@ const CompaniesPage = () => {
                       <UserIcon className="w-8 h-8 p-1.5 bg-slate-200 rounded-full text-slate-500 mr-2" />
                       <div>
                         <p className="text-xs text-slate-500 font-semibold">Admin Contact</p>
-                        <p className="text-sm text-slate-800">{adminContact ? adminContact.name : 'Unassigned'}</p>
+                        <p className="text-sm text-slate-800">{adminContact ? adminContact.username : 'Unassigned'}</p>
                       </div>
                     </div>
                     {adminContact && (

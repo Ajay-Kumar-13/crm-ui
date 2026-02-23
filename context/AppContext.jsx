@@ -86,7 +86,7 @@ export const AppProvider = ({ children }) => {
     const newNotif = {
       id: `n-${Date.now()}`,
       userId: toUserId,
-      from: user.name,
+      from: user.username || user.email || 'User',
       message,
       isRead: false,
       createdAt: new Date().toISOString(),

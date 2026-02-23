@@ -42,30 +42,61 @@ export const MOCK_ROLES = [
   },
 ];
 
+const findRoleByName = (name) => MOCK_ROLES.find((r) => r.name === name);
+
+const buildAuthoritiesForRole = (roleName) => {
+  const role = findRoleByName(roleName);
+  if (!role) return [];
+  return role.authorities
+    .map((authName) => MOCK_AUTHORITIES.find((a) => a.name === authName))
+    .filter(Boolean)
+    .map((a) => ({ id: a.id, name: a.name }));
+};
+
 export const MOCK_USERS = [
   {
-    id: 'u2',
-    name: 'Admin User',
-    username: 'admin',
-    role: 'ADMIN',
+    id: 'u1',
+    username: 'super',
+    email: 'super@gmail.com',
+    role: (() => {
+      const role = findRoleByName('SUPERUSER');
+      return role ? { id: role.id, name: role.name } : null;
+    })(),
+    authorities: buildAuthoritiesForRole('SUPERUSER'),
     accountActive: true,
-    authorities: MOCK_ROLES[1].authorities,
   },
   {
     id: 'u3',
-    name: 'John Doe',
-    username: 'emp1',
-    role: 'EMPLOYEE',
+    username: 'admin',
+    email: 'admin@gmail.com',
+    role: (() => {
+      const role = findRoleByName('ADMIN');
+      return role ? { id: role.id, name: role.name } : null;
+    })(),
+    authorities: buildAuthoritiesForRole('ADMIN'),
     accountActive: true,
-    authorities: MOCK_ROLES[2].authorities,
   },
   {
     id: 'u4',
-    name: 'Jane Smith',
-    username: 'emp2',
-    role: 'EMPLOYEE',
+    username: 'emp1',
+    email: 'emp1@gmail.com',
+    role: (() => {
+      const role = findRoleByName('EMPLOYEE');
+      return role ? { id: role.id, name: role.name } : null;
+    })(),
+    authorities: buildAuthoritiesForRole('EMPLOYEE'),
     accountActive: false,
-    authorities: MOCK_ROLES[2].authorities,
+  },
+  {
+    id: 'u5',
+    username: 'emp2',
+    email: 'emp2@gmail.com',
+    role: (() => {
+      const role = findRoleByName('EMPLOYEE');
+      return role ? { id: role.id, name: role.name } : null;
+    })(),
+    authorities: buildAuthoritiesForRole('EMPLOYEE'),
+    accountActive: true,
   },
 ];
 

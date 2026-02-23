@@ -21,7 +21,7 @@ const ProtectedRoute = ({ children, roles }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (roles && user && !roles.includes(user.role)) {
+  if (roles && user && !roles.includes(user.role?.name)) {
     return <div className="p-8 text-center text-red-500">Access Denied: You do not have permission to view this page.</div>;
   }
 

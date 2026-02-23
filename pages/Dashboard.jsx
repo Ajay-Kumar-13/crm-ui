@@ -44,12 +44,16 @@ const Dashboard = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-slate-800">
-          {user?.role === 'SUPERUSER' ? 'Executive Overview' : user?.role === 'ADMIN' ? 'Admin Dashboard' : 'My Work'}
+          {user?.role?.name === 'SUPERUSER'
+            ? 'Executive Overview'
+            : user?.role?.name === 'ADMIN'
+            ? 'Admin Dashboard'
+            : 'My Work'}
         </h1>
-        <span className="text-sm text-slate-500">Welcome back, {user?.name}</span>
+        <span className="text-sm text-slate-500">Welcome back, {user?.username}</span>
       </div>
 
-      {(user?.role === 'ADMIN' || user?.role === 'SUPERUSER') && (
+      {(user?.role?.name === 'ADMIN' || user?.role?.name === 'SUPERUSER') && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatsCard title="Total Leads" value={totalLeads} icon={Users} color="#3b82f6" />
           <StatsCard title="Pipeline Value" value={`$${(totalRevenue / 1000).toFixed(1)}k`} icon={DollarSign} color="#22c55e" />
@@ -58,7 +62,7 @@ const Dashboard = () => {
         </div>
       )}
 
-      {user?.role === 'EMPLOYEE' && (
+      {user?.role?.name === 'EMPLOYEE' && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <StatsCard title="My Assigned Leads" value={leads.filter((l) => l.assignedToUserId === user.id).length} icon={Users} color="#3b82f6" />
           <StatsCard title="My Wins" value={leads.filter((l) => l.assignedToUserId === user.id && l.status === 'WON').length} icon={DollarSign} color="#22c55e" />
@@ -90,7 +94,7 @@ const Dashboard = () => {
           </div>
         </Card>
 
-        {user?.role === 'SUPERUSER' && (
+        {user?.role?.name === 'SUPERUSER' && (
           <Card title="Company Revenue Overview">
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
@@ -106,7 +110,7 @@ const Dashboard = () => {
           </Card>
         )}
 
-        {user?.role !== 'SUPERUSER' && (
+        {user?.role?.name !== 'SUPERUSER' && (
           <Card title="Recent Activity">
             <div className="space-y-4">
               {leads.slice(0, 3).map((lead) => (

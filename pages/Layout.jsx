@@ -63,13 +63,13 @@ const Layout = () => {
         <nav className="px-4 space-y-2 mt-4 flex-1">
           <NavItem to="/" icon={LayoutDashboard} label="Dashboard" />
 
-          {(user?.role === 'ADMIN' || user?.role === 'SUPERUSER') && (
+          {(user?.role?.name === 'ADMIN' || user?.role?.name === 'SUPERUSER') && (
             <NavItem to="/users" icon={Users} label="Users & Roles" />
           )}
 
-          <NavItem to="/leads" icon={Briefcase} label={user?.role === 'EMPLOYEE' ? 'My Leads' : 'Leads'} />
+          <NavItem to="/leads" icon={Briefcase} label={user?.role?.name === 'EMPLOYEE' ? 'My Leads' : 'Leads'} />
 
-          {user?.role === 'SUPERUSER' && (
+          {user?.role?.name === 'SUPERUSER' && (
             <NavItem to="/companies" icon={Building2} label="Companies" />
           )}
         </nav>
@@ -119,11 +119,11 @@ const Layout = () => {
         <div className="w-full p-4 border-t border-slate-800">
           <div className="flex items-center space-x-3 mb-4 px-4">
             <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-xs font-bold text-white">
-              {user?.name.charAt(0)}
+              {user?.username?.charAt(0)?.toUpperCase()}
             </div>
             <div className="overflow-hidden">
-              <p className="text-sm font-medium truncate">{user?.name}</p>
-              <p className="text-xs text-slate-400 truncate">{user?.role}</p>
+              <p className="text-sm font-medium truncate">{user?.username}</p>
+              <p className="text-xs text-slate-400 truncate">{user?.role?.name}</p>
             </div>
           </div>
           <button
