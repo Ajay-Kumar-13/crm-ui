@@ -19,13 +19,12 @@ const Login = () => {
     e.preventDefault();
     setError('');
 
-    if (password !== 'password') {
-      setError('Invalid credentials');
-      return;
-    }
-
     try {
-      const success = await login(username);
+      const authenticationObject = {
+        username: username,
+        password: password,
+      }
+      const success = await login(authenticationObject);
       if (success) {
         navigate('/');
       } else {

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { MOCK_USERS, MOCK_LEADS, MOCK_COMPANIES, MOCK_AUTHORITIES, MOCK_ROLES, MOCK_NOTIFICATIONS } from '../services/mockData';
 import { useUsers } from '../hooks/useUsers';
+import { fetchAccessToken } from '../services/authentication';
 
 const AppContext = createContext(undefined);
 
@@ -16,10 +17,11 @@ export const AppProvider = ({ children }) => {
   const [authorities, setAuthorities] = useState([]);
   const [roles, setRoles] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [accessToken, setAccessToken] = useState(null);
 
   const [backendError, setBackendError] = useState(false);
 
-  const { data: crm_users } = useUsers();
+  const { data: crm_users } = useUsers(accessToken);
 
   useEffect(() => {
     if (user) {
@@ -49,12 +51,14 @@ export const AppProvider = ({ children }) => {
     }
   }, [crm_users]);
 
-  const login = async (username) => {
+  const login = async (authenticationObject) => {
     if (backendError) throw new Error('Backend Down');
+    console.log("authenticationObject: ", authenticationObject);
 
-    const foundUser = users.find((u) => u.username === username);
-    if (foundUser && foundUser.accountActive) {
-      setUser(foundUser);
+    const token = await fetchAccessToken(authenticationObject);
+    if (token && token.jwtToken) {
+      setAccessToken(token.jwtToken);
+      setUser(token.jwtToken);
       return true;
     }
     return false;
@@ -123,6 +127,7 @@ export const AppProvider = ({ children }) => {
         addRole,
         sendNotification,
         markNotificationAsRead,
+        accessToken,
       }}
     >
       {children}
