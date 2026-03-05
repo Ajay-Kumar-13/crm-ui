@@ -3,8 +3,7 @@ name: Build and Deploy to AWS ECS
 on:
   push:
     branches:
-      - main
-      - master
+      - '**'
 
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
@@ -70,3 +69,47 @@ jobs:
           service: ${{ env.ECS_SERVICE }}
           cluster: ${{ env.ECS_CLUSTER }}
           wait-for-service-stability: true
+  cleanup:
+    runs-on: ubuntu-latest
+    name: Clean up unused task definitions
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      
+      - name: Cleanup Old Task Definitions
+        run: |
+          FAMILY="users_ui_task"
+          KEEP=5
+
+          TASKS=$(aws ecs list-task-definitions \
+            --family-prefix $FAMILY \
+            --sort ASC \
+            --query 'taskDefinitionArns[*]' \
+            --output text)
+
+          TOTAL=$(echo "$TASKS" | tr '\t' '\n' | wc -l)
+
+          echo "TOTAL TASK DEFINITIONS: $TOTAL"
+
+          DELETE_COUNT=$((TOTAL - KEEP))
+
+          echo "DELETE COUNT: $DELETE_COUNT"
+
+          if [ "$DELETE_COUNT" -le 0 ]; then
+            echo "Nothing to delete"
+            exit 0
+          fi
+
+          COUNT=0
+          for TASK in $TASKS; do
+            COUNT=$((COUNT+1))
+            if [ "$COUNT" -le "$DELETE_COUNT" ]; then
+              echo "Deregistering $TASK"
+              aws ecs deregister-task-definition --task-definition $TASK
+            fi
+          done
