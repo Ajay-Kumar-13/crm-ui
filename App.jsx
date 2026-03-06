@@ -8,13 +8,18 @@ import UsersPage from './pages/Users';
 import LeadsPage from './pages/Leads';
 import CompaniesPage from './pages/Companies';
 import Trap from './pages/Trap';
+import { LoadingScreen } from './components/ui';
 
 const ProtectedRoute = ({ children, roles }) => {
-  const { isAuthenticated, user, backendError } = useApp();
+  const { isAuthenticated, user, backendError, authLoading } = useApp();
   const location = useLocation();
 
   if (backendError) {
     return <Trap />;
+  }
+
+  if (authLoading) {
+    return <LoadingScreen message="Loading your data..." />;
   }
 
   if (!isAuthenticated) {

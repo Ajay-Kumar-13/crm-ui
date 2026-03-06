@@ -7,10 +7,7 @@ import { jwtDecode } from 'jwt-decode';
 const AppContext = createContext(undefined);
 
 export const AppProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('access_token');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [user, setUser] = useState();
 
   const [users, setUsers] = useState([]);
   const [leads, setLeads] = useState([]);
@@ -19,27 +16,46 @@ export const AppProvider = ({ children }) => {
   const [roles, setRoles] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [accessToken, setAccessToken] = useState(null);
-
+  const [authLoading, setAuthLoading] = useState(true);
   const [backendError, setBackendError] = useState(false);
 
-  const { data: crm_users } = useUsers(accessToken);
+  console.log(accessToken);
+
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      const userFromToken = jwtDecode(token);
+      setUser(userFromToken);
+      setAccessToken(token);
+      setAuthLoading(false);
+    } else {
+      setAuthLoading(false);
+    }
+  }, [])
 
   useEffect(() => {
     if (user) {
-      localStorage.setItem('access_token', JSON.stringify(user));
+      localStorage.setItem('access_token', accessToken);
     } else {
       localStorage.removeItem('access_token');
     }
   }, [user]);
 
+  const { data: crm_users, isLoading: usersLoading } = useUsers(accessToken);
+
+  console.log(usersLoading);
+  
+
   useEffect(() => {
-    console.log("PROFILE_ACTIVE: ", import.meta.env.VITE_PROFILE_ACTIVE);
-    setUsers(crm_users);
-    setLeads(MOCK_LEADS);
-    setCompanies(MOCK_COMPANIES);
-    setAuthorities(MOCK_AUTHORITIES);
-    setRoles(MOCK_ROLES);
-    setNotifications(MOCK_NOTIFICATIONS);
+      console.log("PROFILE_ACTIVE: ", import.meta.env.VITE_PROFILE_ACTIVE);
+      if(!usersLoading && crm_users) {
+        setUsers(crm_users);
+        setLeads(MOCK_LEADS);
+        setCompanies(MOCK_COMPANIES);
+        setAuthorities(MOCK_AUTHORITIES);
+        setRoles(MOCK_ROLES);
+        setNotifications(MOCK_NOTIFICATIONS);
+      }
 
   }, [crm_users]);
 
@@ -59,6 +75,7 @@ export const AppProvider = ({ children }) => {
 
   const logout = () => {
     setUser(null);
+    setAccessToken(null);
   };
 
   const triggerBackendError = () => setBackendError(true);
@@ -121,6 +138,8 @@ export const AppProvider = ({ children }) => {
         sendNotification,
         markNotificationAsRead,
         accessToken,
+        loading: usersLoading,
+        authLoading
       }}
     >
       {children}

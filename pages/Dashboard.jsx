@@ -1,11 +1,11 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { Card } from '../components/ui';
+import { Card, LoadingScreen } from '../components/ui';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { DollarSign, Users, Briefcase, TrendingUp } from 'lucide-react';
 
 const Dashboard = () => {
-  const { user, leads, companies } = useApp();
+  const { user, leads, companies, loading } = useApp();
 
   const totalLeads = leads.length;
   const wonLeads = leads.filter((l) => l.status === 'WON').length;
@@ -39,6 +39,10 @@ const Dashboard = () => {
       </div>
     </div>
   );
+
+  if (loading) {
+    return <LoadingScreen message="Loading your data..." />;
+  }
 
   return (
     <div className="space-y-6">

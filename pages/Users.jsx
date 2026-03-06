@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Card, Button, Input, Select, Badge, Checkbox } from '../components/ui';
+import { Card, Button, Input, Select, Badge, Checkbox, LoadingScreen } from '../components/ui';
 import { Edit2, Shield, UserPlus, Power, CheckCircle, XCircle, Users, Lock, ShieldCheck, Search, Eye, X } from 'lucide-react';
 
 const UsersPage = () => {
-  const { users, addUser, updateUser, authorities, roles, addRole, addAuthority, user: currentUser } = useApp();
+  const { users, addUser, updateUser, authorities, roles, addRole, addAuthority, user: currentUser, loading } = useApp();
   const [activeTab, setActiveTab] = useState('users');
 
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -130,13 +130,17 @@ const UsersPage = () => {
     }
   };
 
+  if (loading) {
+    return <LoadingScreen message="Loading your data..." />;
+  }
+
   const filteredAuthorities = authorities.filter(
     (a) =>
       a.name.toLowerCase().includes(authSearchTerm.toLowerCase()) ||
       a.description.toLowerCase().includes(authSearchTerm.toLowerCase())
   );
 
-  const filteredUsers = users.filter((u) => {
+  const filteredUsers = (users).filter((u) => {
     const matchesSearch =
       u.username.toLowerCase().includes(userSearch.toLowerCase()) ||
       (u.email || '').toLowerCase().includes(userSearch.toLowerCase());

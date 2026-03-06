@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { LoadingScreen } from '../components/ui';
 import {
   LayoutDashboard,
   Users,
@@ -13,7 +14,7 @@ import {
 } from 'lucide-react';
 
 const Layout = () => {
-  const { user, logout, triggerBackendError, notifications, markNotificationAsRead } = useApp();
+  const { user, logout, triggerBackendError, notifications, markNotificationAsRead, loading } = useApp();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -41,6 +42,10 @@ const Layout = () => {
       <span>{label}</span>
     </NavLink>
   );
+
+  if (loading) {
+    return <LoadingScreen message="Loading your data..." />;
+  }
 
   return (
     <div className="flex h-screen bg-slate-100 overflow-hidden">
