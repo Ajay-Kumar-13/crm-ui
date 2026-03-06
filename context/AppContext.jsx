@@ -7,7 +7,7 @@ const AppContext = createContext(undefined);
 
 export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('nexus_user');
+    const saved = localStorage.getItem('access_token');
     return saved ? JSON.parse(saved) : null;
   });
 
@@ -25,30 +25,22 @@ export const AppProvider = ({ children }) => {
 
   useEffect(() => {
     if (user) {
-      localStorage.setItem('nexus_user', JSON.stringify(user));
+      localStorage.setItem('access_token', JSON.stringify(user));
     } else {
-      localStorage.removeItem('nexus_user');
+      localStorage.removeItem('access_token');
     }
   }, [user]);
 
   useEffect(() => {
     console.log("PROFILE_ACTIVE: ", import.meta.env.VITE_PROFILE_ACTIVE);
-    
-    if (import.meta.env.VITE_PROFILE_ACTIVE === 'local') {
-      setUsers(MOCK_USERS);
-      setLeads(MOCK_LEADS);
-      setCompanies(MOCK_COMPANIES);
-      setAuthorities(MOCK_AUTHORITIES);
-      setRoles(MOCK_ROLES);
-      setNotifications(MOCK_NOTIFICATIONS);
-    } else {
-      setUsers(crm_users);
-      setLeads(MOCK_LEADS);
-      setCompanies(MOCK_COMPANIES);
-      setAuthorities(MOCK_AUTHORITIES);
-      setRoles(MOCK_ROLES);
-      setNotifications(MOCK_NOTIFICATIONS);
-    }
+
+    setUsers(crm_users);
+    setLeads(MOCK_LEADS);
+    setCompanies(MOCK_COMPANIES);
+    setAuthorities(MOCK_AUTHORITIES);
+    setRoles(MOCK_ROLES);
+    setNotifications(MOCK_NOTIFICATIONS);
+
   }, [crm_users]);
 
   const login = async (authenticationObject) => {
