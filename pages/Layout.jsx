@@ -63,13 +63,13 @@ const Layout = () => {
         <nav className="px-4 space-y-2 mt-4 flex-1">
           <NavItem to="/" icon={LayoutDashboard} label="Dashboard" />
 
-          {(user?.role?.name === 'ADMIN' || user?.role?.name === 'SUPERUSER') && (
+          {(user?.roles === 'ADMIN' || user?.roles === 'ROOT') && (
             <NavItem to="/users" icon={Users} label="Users & Roles" />
           )}
 
-          <NavItem to="/leads" icon={Briefcase} label={user?.role?.name === 'EMPLOYEE' ? 'My Leads' : 'Leads'} />
+          <NavItem to="/leads" icon={Briefcase} label={user?.roles === 'EMPLOYEE' ? 'My Leads' : 'Leads'} />
 
-          {user?.role?.name === 'SUPERUSER' && (
+          {user?.roles === 'ROOT' && (
             <NavItem to="/companies" icon={Building2} label="Companies" />
           )}
         </nav>
@@ -123,7 +123,7 @@ const Layout = () => {
             </div>
             <div className="overflow-hidden">
               <p className="text-sm font-medium truncate">{user?.username}</p>
-              <p className="text-xs text-slate-400 truncate">{user?.role?.name}</p>
+              <p className="text-xs text-slate-400 truncate">{user?.roles}</p>
             </div>
           </div>
           <button

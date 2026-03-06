@@ -21,7 +21,7 @@ const ProtectedRoute = ({ children, roles }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (roles && user && !roles.includes(user.role?.name)) {
+  if (roles && user && !roles.includes(user.roles)) {
     return <div className="p-8 text-center text-red-500">Access Denied: You do not have permission to view this page.</div>;
   }
 
@@ -51,7 +51,7 @@ const AppRoutes = () => {
         <Route
           path="users"
           element={
-            <ProtectedRoute roles={['ADMIN', 'SUPERUSER']}>
+            <ProtectedRoute roles={['ADMIN', 'ROOT']}>
               <UsersPage />
             </ProtectedRoute>
           }
@@ -69,7 +69,7 @@ const AppRoutes = () => {
         <Route
           path="companies"
           element={
-            <ProtectedRoute roles={['SUPERUSER']}>
+            <ProtectedRoute roles={['ROOT']}>
               <CompaniesPage />
             </ProtectedRoute>
           }

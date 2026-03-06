@@ -163,7 +163,7 @@ const UsersPage = () => {
           >
             Roles
           </button>
-          {currentUser?.role?.name === 'SUPERUSER' && (
+          {currentUser?.roles=== 'ROOT' && (
             <button
               onClick={() => setActiveTab('authorities')}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'authorities' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
@@ -238,7 +238,7 @@ const UsersPage = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <Badge
                             color={
-                              u.role?.name === 'SUPERUSER'
+                              u.role?.name === 'ROOT'
                                 ? 'red'
                                 : u.role?.name === 'ADMIN'
                                 ? 'blue'
@@ -349,7 +349,7 @@ const UsersPage = () => {
         </div>
       )}
 
-      {activeTab === 'authorities' && currentUser?.role?.name === 'SUPERUSER' && (
+      {activeTab === 'authorities' && currentUser?.roles === 'ROOT' && (
         <div className="space-y-4">
           <div className="flex justify-end">
             <Button onClick={() => setIsAuthModalOpen(true)}>

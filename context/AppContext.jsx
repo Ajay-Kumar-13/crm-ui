@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { MOCK_USERS, MOCK_LEADS, MOCK_COMPANIES, MOCK_AUTHORITIES, MOCK_ROLES, MOCK_NOTIFICATIONS } from '../services/mockData';
 import { useUsers } from '../hooks/useUsers';
 import { fetchAccessToken } from '../services/authentication';
+import { jwtDecode } from 'jwt-decode';
 
 const AppContext = createContext(undefined);
 
@@ -33,7 +34,6 @@ export const AppProvider = ({ children }) => {
 
   useEffect(() => {
     console.log("PROFILE_ACTIVE: ", import.meta.env.VITE_PROFILE_ACTIVE);
-
     setUsers(crm_users);
     setLeads(MOCK_LEADS);
     setCompanies(MOCK_COMPANIES);
@@ -50,7 +50,8 @@ export const AppProvider = ({ children }) => {
     const token = await fetchAccessToken(authenticationObject);
     if (token && token.jwtToken) {
       setAccessToken(token.jwtToken);
-      setUser(token.jwtToken);
+      const userFromToken = jwtDecode(token.jwtToken);
+      setUser(userFromToken);
       return true;
     }
     return false;
