@@ -1,9 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchUsers } from "../services/fetchUsers";
 
-export const useUsers = (accessToken) => {
-    console.log(accessToken);
-    
+export const useUsers = (accessToken) => {    
     const query = useQuery({
         queryKey: ['users'],
         queryFn: () => fetchUsers(accessToken),

@@ -19,8 +19,6 @@ export const AppProvider = ({ children }) => {
   const [authLoading, setAuthLoading] = useState(true);
   const [backendError, setBackendError] = useState(false);
 
-  console.log(accessToken);
-
   useEffect(() => {
     const token = localStorage.getItem('access_token');
     if (token) {
@@ -42,9 +40,6 @@ export const AppProvider = ({ children }) => {
   }, [user]);
 
   const { data: crm_users, isLoading: usersLoading } = useUsers(accessToken);
-
-  console.log(usersLoading);
-  
 
   useEffect(() => {
       console.log("PROFILE_ACTIVE: ", import.meta.env.VITE_PROFILE_ACTIVE);

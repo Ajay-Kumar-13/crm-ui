@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Card, Button, Input, Select, Badge, Checkbox, LoadingScreen } from '../components/ui';
+import { Card, Button, Input, Select, Badge, Checkbox, LoadingScreen, Toast } from '../components/ui';
 import { Edit2, Shield, UserPlus, Power, CheckCircle, XCircle, Users, Lock, ShieldCheck, Search, Eye, X } from 'lucide-react';
 
 const UsersPage = () => {
@@ -19,6 +19,11 @@ const UsersPage = () => {
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
 
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastSubMessage, setToastSubMessage] = useState('');
+  const [toastType, setToastType] = useState('info');
+
   const [userForm, setUserForm] = useState({
     username: '',
     email: '',
@@ -28,6 +33,13 @@ const UsersPage = () => {
   });
   const [roleForm, setRoleForm] = useState({ name: '', description: '', authorities: [] });
   const [authForm, setAuthForm] = useState({ name: '', description: '' });
+
+  const showToast = (message, submessage, type = 'info') => {
+    setToastMessage(message);
+    setToastSubMessage(submessage);
+    setToastType(type);
+    setToastVisible(true);
+  };
 
   const handleOpenUserModal = (user) => {
     setAuthSearchTerm('');
@@ -71,17 +83,24 @@ const UsersPage = () => {
 
     if (editingUser) {
       updateUser(editingUser.id, payload);
+      showToast('User updated successfully', '', 'success');
     } else {
       addUser({
         id: `u-${Date.now()}`,
         ...payload,
       });
+      showToast('User added successfully', `Default Credentials has been shared to ${userForm.email}`, 'success');
     }
     setIsUserModalOpen(false);
   };
 
   const toggleUserStatus = (user) => {
     updateUser(user.id, { accountActive: !user.accountActive });
+    showToast(
+      user.accountActive ? 'User deactivated successfully' : 'User activated successfully',
+      '',
+      'success'
+    );
   };
 
   const handleUserAuthChange = (auth) => {
@@ -114,6 +133,7 @@ const UsersPage = () => {
       });
       setRoleForm({ name: '', description: '', authorities: [] });
       setIsRoleModalOpen(false);
+      showToast('Role created successfully', '', 'success');
     }
   };
 
@@ -127,6 +147,7 @@ const UsersPage = () => {
       });
       setAuthForm({ name: '', description: '' });
       setIsAuthModalOpen(false);
+      showToast('Authority created successfully', '', 'success');
     }
   };
 
@@ -218,6 +239,14 @@ const UsersPage = () => {
               </Button>
             </div>
           </div>
+
+          <Toast 
+            message={toastMessage} 
+            submessage={toastSubMessage}
+            type={toastType}
+            isVisible={toastVisible}
+            onClose={() => setToastVisible(false)}
+          />
 
           <Card>
             <div className="overflow-x-auto">
