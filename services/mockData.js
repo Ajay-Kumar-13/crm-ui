@@ -24,7 +24,7 @@ export const MOCK_AUTHORITIES = [
 export const MOCK_ROLES = [
   {
     id: 'r1',
-    name: 'SUPERUSER',
+    name: 'ROOT',
     description: 'Full system access',
     authorities: MOCK_AUTHORITIES.map((a) => a.name),
   },

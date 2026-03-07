@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { LoadingScreen } from '../components/ui';
 import {
   LayoutDashboard,
   Users,
@@ -13,7 +14,7 @@ import {
 } from 'lucide-react';
 
 const Layout = () => {
-  const { user, logout, triggerBackendError, notifications, markNotificationAsRead } = useApp();
+  const { user, logout, triggerBackendError, notifications, markNotificationAsRead, loading } = useApp();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -42,6 +43,10 @@ const Layout = () => {
     </NavLink>
   );
 
+  if (loading) {
+    return <LoadingScreen message="Loading your data..." />;
+  }
+
   return (
     <div className="flex h-screen bg-slate-100 overflow-hidden">
       <div className="md:hidden fixed w-full bg-primary text-white z-20 flex justify-between items-center p-4 shadow-md">
@@ -63,13 +68,13 @@ const Layout = () => {
         <nav className="px-4 space-y-2 mt-4 flex-1">
           <NavItem to="/" icon={LayoutDashboard} label="Dashboard" />
 
-          {(user?.role?.name === 'ADMIN' || user?.role?.name === 'SUPERUSER') && (
+          {(user?.roles === 'ADMIN' || user?.roles === 'ROOT') && (
             <NavItem to="/users" icon={Users} label="Users & Roles" />
           )}
 
-          <NavItem to="/leads" icon={Briefcase} label={user?.role?.name === 'EMPLOYEE' ? 'My Leads' : 'Leads'} />
+          <NavItem to="/leads" icon={Briefcase} label={user?.roles === 'EMPLOYEE' ? 'My Leads' : 'Leads'} />
 
-          {user?.role?.name === 'SUPERUSER' && (
+          {user?.roles === 'ROOT' && (
             <NavItem to="/companies" icon={Building2} label="Companies" />
           )}
         </nav>
@@ -123,7 +128,7 @@ const Layout = () => {
             </div>
             <div className="overflow-hidden">
               <p className="text-sm font-medium truncate">{user?.username}</p>
-              <p className="text-xs text-slate-400 truncate">{user?.role?.name}</p>
+              <p className="text-xs text-slate-400 truncate">{user?.roles}</p>
             </div>
           </div>
           <button

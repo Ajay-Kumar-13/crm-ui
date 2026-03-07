@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Card, Button, Input, Select, Badge, Checkbox } from '../components/ui';
+import { Card, Button, Input, Select, Badge, Checkbox, LoadingScreen, Toast } from '../components/ui';
 import { Edit2, Shield, UserPlus, Power, CheckCircle, XCircle, Users, Lock, ShieldCheck, Search, Eye, X } from 'lucide-react';
 
 const UsersPage = () => {
-  const { users, addUser, updateUser, authorities, roles, addRole, addAuthority, user: currentUser } = useApp();
+  const { users, addUser, updateUser, authorities, roles, addRole, addAuthority, user: currentUser, loading } = useApp();
   const [activeTab, setActiveTab] = useState('users');
 
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -19,6 +19,11 @@ const UsersPage = () => {
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
 
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastSubMessage, setToastSubMessage] = useState('');
+  const [toastType, setToastType] = useState('info');
+
   const [userForm, setUserForm] = useState({
     username: '',
     email: '',
@@ -28,6 +33,13 @@ const UsersPage = () => {
   });
   const [roleForm, setRoleForm] = useState({ name: '', description: '', authorities: [] });
   const [authForm, setAuthForm] = useState({ name: '', description: '' });
+
+  const showToast = (message, submessage, type = 'info') => {
+    setToastMessage(message);
+    setToastSubMessage(submessage);
+    setToastType(type);
+    setToastVisible(true);
+  };
 
   const handleOpenUserModal = (user) => {
     setAuthSearchTerm('');
@@ -71,17 +83,24 @@ const UsersPage = () => {
 
     if (editingUser) {
       updateUser(editingUser.id, payload);
+      showToast('User updated successfully', '', 'success');
     } else {
       addUser({
         id: `u-${Date.now()}`,
         ...payload,
       });
+      showToast('User added successfully', `Default Credentials has been shared to ${userForm.email}`, 'success');
     }
     setIsUserModalOpen(false);
   };
 
   const toggleUserStatus = (user) => {
     updateUser(user.id, { accountActive: !user.accountActive });
+    showToast(
+      user.accountActive ? 'User deactivated successfully' : 'User activated successfully',
+      '',
+      'success'
+    );
   };
 
   const handleUserAuthChange = (auth) => {
@@ -114,6 +133,7 @@ const UsersPage = () => {
       });
       setRoleForm({ name: '', description: '', authorities: [] });
       setIsRoleModalOpen(false);
+      showToast('Role created successfully', '', 'success');
     }
   };
 
@@ -127,8 +147,13 @@ const UsersPage = () => {
       });
       setAuthForm({ name: '', description: '' });
       setIsAuthModalOpen(false);
+      showToast('Authority created successfully', '', 'success');
     }
   };
+
+  if (loading) {
+    return <LoadingScreen message="Loading your data..." />;
+  }
 
   const filteredAuthorities = authorities.filter(
     (a) =>
@@ -136,7 +161,7 @@ const UsersPage = () => {
       a.description.toLowerCase().includes(authSearchTerm.toLowerCase())
   );
 
-  const filteredUsers = users.filter((u) => {
+  const filteredUsers = (users).filter((u) => {
     const matchesSearch =
       u.username.toLowerCase().includes(userSearch.toLowerCase()) ||
       (u.email || '').toLowerCase().includes(userSearch.toLowerCase());
@@ -163,7 +188,7 @@ const UsersPage = () => {
           >
             Roles
           </button>
-          {currentUser?.role?.name === 'SUPERUSER' && (
+          {currentUser?.roles=== 'ROOT' && (
             <button
               onClick={() => setActiveTab('authorities')}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'authorities' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
@@ -215,6 +240,14 @@ const UsersPage = () => {
             </div>
           </div>
 
+          <Toast 
+            message={toastMessage} 
+            submessage={toastSubMessage}
+            type={toastType}
+            isVisible={toastVisible}
+            onClose={() => setToastVisible(false)}
+          />
+
           <Card>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-200">
@@ -238,7 +271,7 @@ const UsersPage = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <Badge
                             color={
-                              u.role?.name === 'SUPERUSER'
+                              u.role?.name === 'ROOT'
                                 ? 'red'
                                 : u.role?.name === 'ADMIN'
                                 ? 'blue'
@@ -349,7 +382,7 @@ const UsersPage = () => {
         </div>
       )}
 
-      {activeTab === 'authorities' && currentUser?.role?.name === 'SUPERUSER' && (
+      {activeTab === 'authorities' && currentUser?.roles === 'ROOT' && (
         <div className="space-y-4">
           <div className="flex justify-end">
             <Button onClick={() => setIsAuthModalOpen(true)}>
