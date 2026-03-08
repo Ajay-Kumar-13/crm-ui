@@ -4,6 +4,8 @@ import App from './App';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import { createServer } from 'miragejs';
 import {users} from './mirage-server/mocks/users';
+import {authorities} from './mirage-server/mocks/authorities';
+import {roles} from './mirage-server/mocks/roles';
 import { accessToken } from './mirage-server/mocks/accesstoken';
 
 const queryClient = new QueryClient();
@@ -22,6 +24,9 @@ if (`${import.meta.env.VITE_PROFILE_ACTIVE}`.match('local')) {
       this.namespace="api";
       this.get("/admin/users", users);
       this.post("/auth/login", accessToken);
+      this.get("/admin/authorities", authorities);
+      this.get("/admin/roles", roles);
+      this.get("/admin/authorities/:roleId", authorities);
     }
   })
 }

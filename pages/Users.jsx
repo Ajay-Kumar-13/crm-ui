@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Card, Button, Input, Select, Badge, Checkbox, LoadingScreen, Toast } from '../components/ui';
 import { Edit2, Shield, UserPlus, Power, CheckCircle, XCircle, Users, Lock, ShieldCheck, Search, Eye, X } from 'lucide-react';
+import { fetchRoleAuthorities } from '../utils/system-utils';
 
 const UsersPage = () => {
-  const { users, addUser, updateUser, authorities, roles, addRole, addAuthority, user: currentUser, loading } = useApp();
+  const { users, addUser, updateUser, authorities, roles, addRole, addAuthority, user: currentUser, loading, accessToken } = useApp();
   const [activeTab, setActiveTab] = useState('users');
 
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -41,7 +42,7 @@ const UsersPage = () => {
     setToastVisible(true);
   };
 
-  const handleOpenUserModal = (user) => {
+  const handleOpenUserModal = async (user) => {
     setAuthSearchTerm('');
     if (user) {
       setEditingUser(user);
@@ -54,16 +55,20 @@ const UsersPage = () => {
       });
     } else {
       setEditingUser(null);
-      const defaultRole = roles.find((r) => r.name === 'EMPLOYEE');
+      console.log(roles);
+      // TODO: change default root to EMPLOYEE
+      const defaultRole = roles.find((r) => r.roleName === 'ROOT');
+      const defaultRoleAuthorities = await fetchRoleAuthorities(accessToken, defaultRole.roleId);
+      
       setUserForm({
         username: '',
         email: '',
-        role: defaultRole ? { id: defaultRole.id, name: defaultRole.name } : null,
-        authorities: defaultRole
-          ? (defaultRole.authorities || [])
-              .map((authName) => authorities.find((a) => a.name === authName))
+        role: defaultRole ? { id: defaultRole.roleId, name: defaultRole.roleName } : null,
+        authorities: defaultRoleAuthorities
+          ? defaultRoleAuthorities
+              .map((authName) => authorities.find((a) => a.authorityName === authName.authorityName))
               .filter(Boolean)
-              .map((a) => ({ id: a.id, name: a.name }))
+              .map((a) => ({ id: a.authorityId, name: a.authorityName }))
           : [],
         accountActive: true,
       });
@@ -107,9 +112,9 @@ const UsersPage = () => {
     const current = userForm.authorities || [];
     const exists = current.some((a) => a.id === auth.id);
     if (exists) {
-      setUserForm({ ...userForm, authorities: current.filter((a) => a.id !== auth.id) });
+      setUserForm({ ...userForm, authorities: current.filter((a) => a.authorityId !== auth.authorityId) });
     } else {
-      setUserForm({ ...userForm, authorities: [...current, { id: auth.id, name: auth.name }] });
+      setUserForm({ ...userForm, authorities: [...current, { id: auth.authorityId, name: auth.authorityName }] });
     }
   };
 
@@ -157,8 +162,7 @@ const UsersPage = () => {
 
   const filteredAuthorities = authorities.filter(
     (a) =>
-      a.name.toLowerCase().includes(authSearchTerm.toLowerCase()) ||
-      a.description.toLowerCase().includes(authSearchTerm.toLowerCase())
+      a.authorityName.toLowerCase().includes(authSearchTerm.toLowerCase())
   );
 
   const filteredUsers = (users).filter((u) => {
@@ -473,19 +477,19 @@ const UsersPage = () => {
                 value={userForm.role?.id || ''}
                 onChange={(e) => {
                   const newRoleId = e.target.value;
-                  const roleDef = roles.find((r) => r.id === newRoleId);
+                  const roleDef = roles.find((r) => r.roleId === newRoleId);
                   setUserForm({
                     ...userForm,
-                    role: roleDef ? { id: roleDef.id, name: roleDef.name } : null,
+                    role: roleDef ? { id: roleDef.roleId, name: roleDef.roleName } : null,
                     authorities: roleDef
                       ? (roleDef.authorities || [])
-                          .map((authName) => authorities.find((a) => a.name === authName))
+                          .map((authName) => authorities.find((a) => a.authorityName === authName))
                           .filter(Boolean)
-                          .map((a) => ({ id: a.id, name: a.name }))
+                          .map((a) => ({ id: a.authorityId, name: a.authorityName }))
                       : [],
                   });
                 }}
-                options={roles.map((r) => ({ value: r.id, label: r.name }))}
+                options={roles.map((r) => ({ value: r.roleId, label: r.roleName }))}
               />
 
               <div className="mb-4">
@@ -496,7 +500,7 @@ const UsersPage = () => {
                 />
               </div>
 
-              <div className="mb-4">
+              {editingUser && (<div className="mb-4">
                 <label className="block text-sm font-medium text-slate-700 mb-2">Assign Authorities</label>
                 <div className="mb-2 relative">
                   <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
@@ -512,11 +516,10 @@ const UsersPage = () => {
                   {filteredAuthorities.length > 0 ? (
                     filteredAuthorities.map((auth) => (
                       <Checkbox
-                        key={auth.id}
-                        label={auth.name}
-                        checked={userForm.authorities?.some((a) => a.id === auth.id)}
+                        key={auth.authorityId}
+                        label={auth.authorityName}
+                        checked={userForm.authorities?.some((a) => a.id === auth.authorityId)}
                         onChange={() => handleUserAuthChange(auth)}
-                        title={auth.description}
                       />
                     ))
                   ) : (
@@ -524,7 +527,7 @@ const UsersPage = () => {
                   )}
                 </div>
                 <p className="text-xs text-slate-500 mt-1">Check permissions to explicitly grant them to this user.</p>
-              </div>
+              </div> )}
 
               <div className="flex justify-end space-x-2 mt-6 pt-4 border-t border-slate-100">
                 <Button type="button" variant="outline" onClick={() => setIsUserModalOpen(false)}>

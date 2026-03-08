@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { MOCK_USERS, MOCK_LEADS, MOCK_COMPANIES, MOCK_AUTHORITIES, MOCK_ROLES, MOCK_NOTIFICATIONS } from '../services/mockData';
 import { useUsers } from '../hooks/useUsers';
-import { fetchAccessToken } from '../services/authentication';
+import { useAuthorities } from '../hooks/useAuthorities';
+import { useRoles } from '../hooks/useRoles';
+import { fetchAccessToken } from '../utils/system-utils';
 import { jwtDecode } from 'jwt-decode';
 
 const AppContext = createContext(undefined);
@@ -40,19 +42,21 @@ export const AppProvider = ({ children }) => {
   }, [user]);
 
   const { data: crm_users, isLoading: usersLoading } = useUsers(accessToken);
+  const { data: crm_authorities, isLoading: authoritiesLoading } = useAuthorities(accessToken);
+  const { data: crm_roles, isLoading: rolesLoading } = useRoles(accessToken);
 
   useEffect(() => {
       console.log("PROFILE_ACTIVE: ", import.meta.env.VITE_PROFILE_ACTIVE);
-      if(!usersLoading && crm_users) {
+      if(!usersLoading && crm_users && crm_authorities && crm_roles) {
         setUsers(crm_users);
         setLeads(MOCK_LEADS);
         setCompanies(MOCK_COMPANIES);
-        setAuthorities(MOCK_AUTHORITIES);
-        setRoles(MOCK_ROLES);
+        setAuthorities(crm_authorities);
+        setRoles(crm_roles);
         setNotifications(MOCK_NOTIFICATIONS);
       }
 
-  }, [crm_users]);
+  }, [crm_users, crm_authorities, crm_roles]);
 
   const login = async (authenticationObject) => {
     if (backendError) throw new Error('Backend Down');
