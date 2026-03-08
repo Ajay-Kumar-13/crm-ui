@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Card, Button, Input, Select, Badge, Checkbox } from '../components/ui';
+import { Card, Button, Input, Select, Badge, Checkbox, LoadingScreen, Toast } from '../components/ui';
 import { Edit2, Shield, UserPlus, Power, CheckCircle, XCircle, Users, Lock, ShieldCheck, Search, Eye, X } from 'lucide-react';
+import { fetchRoleAuthorities } from '../utils/system-utils';
 
 const UsersPage = () => {
-  const { users, addUser, updateUser, authorities, roles, addRole, addAuthority, user: currentUser } = useApp();
+  const { users, addUser, updateUser, authorities, roles, addRole, addAuthority, user: currentUser, loading, accessToken } = useApp();
   const [activeTab, setActiveTab] = useState('users');
 
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -19,6 +20,11 @@ const UsersPage = () => {
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
 
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastSubMessage, setToastSubMessage] = useState('');
+  const [toastType, setToastType] = useState('info');
+
   const [userForm, setUserForm] = useState({
     username: '',
     email: '',
@@ -29,7 +35,14 @@ const UsersPage = () => {
   const [roleForm, setRoleForm] = useState({ name: '', description: '', authorities: [] });
   const [authForm, setAuthForm] = useState({ name: '', description: '' });
 
-  const handleOpenUserModal = (user) => {
+  const showToast = (message, submessage, type = 'info') => {
+    setToastMessage(message);
+    setToastSubMessage(submessage);
+    setToastType(type);
+    setToastVisible(true);
+  };
+
+  const handleOpenUserModal = async (user) => {
     setAuthSearchTerm('');
     if (user) {
       setEditingUser(user);
@@ -42,16 +55,20 @@ const UsersPage = () => {
       });
     } else {
       setEditingUser(null);
-      const defaultRole = roles.find((r) => r.name === 'EMPLOYEE');
+      console.log(roles);
+      // TODO: change default root to EMPLOYEE
+      const defaultRole = roles.find((r) => r.roleName === 'ROOT');
+      const defaultRoleAuthorities = await fetchRoleAuthorities(accessToken, defaultRole.roleId);
+      
       setUserForm({
         username: '',
         email: '',
-        role: defaultRole ? { id: defaultRole.id, name: defaultRole.name } : null,
-        authorities: defaultRole
-          ? (defaultRole.authorities || [])
-              .map((authName) => authorities.find((a) => a.name === authName))
+        role: defaultRole ? { id: defaultRole.roleId, name: defaultRole.roleName } : null,
+        authorities: defaultRoleAuthorities
+          ? defaultRoleAuthorities
+              .map((authName) => authorities.find((a) => a.authorityName === authName.authorityName))
               .filter(Boolean)
-              .map((a) => ({ id: a.id, name: a.name }))
+              .map((a) => ({ id: a.authorityId, name: a.authorityName }))
           : [],
         accountActive: true,
       });
@@ -71,26 +88,33 @@ const UsersPage = () => {
 
     if (editingUser) {
       updateUser(editingUser.id, payload);
+      showToast('User updated successfully', '', 'success');
     } else {
       addUser({
         id: `u-${Date.now()}`,
         ...payload,
       });
+      showToast('User added successfully', `Default Credentials has been shared to ${userForm.email}`, 'success');
     }
     setIsUserModalOpen(false);
   };
 
   const toggleUserStatus = (user) => {
     updateUser(user.id, { accountActive: !user.accountActive });
+    showToast(
+      user.accountActive ? 'User deactivated successfully' : 'User activated successfully',
+      '',
+      'success'
+    );
   };
 
   const handleUserAuthChange = (auth) => {
     const current = userForm.authorities || [];
     const exists = current.some((a) => a.id === auth.id);
     if (exists) {
-      setUserForm({ ...userForm, authorities: current.filter((a) => a.id !== auth.id) });
+      setUserForm({ ...userForm, authorities: current.filter((a) => a.authorityId !== auth.authorityId) });
     } else {
-      setUserForm({ ...userForm, authorities: [...current, { id: auth.id, name: auth.name }] });
+      setUserForm({ ...userForm, authorities: [...current, { id: auth.authorityId, name: auth.authorityName }] });
     }
   };
 
@@ -114,6 +138,7 @@ const UsersPage = () => {
       });
       setRoleForm({ name: '', description: '', authorities: [] });
       setIsRoleModalOpen(false);
+      showToast('Role created successfully', '', 'success');
     }
   };
 
@@ -127,16 +152,20 @@ const UsersPage = () => {
       });
       setAuthForm({ name: '', description: '' });
       setIsAuthModalOpen(false);
+      showToast('Authority created successfully', '', 'success');
     }
   };
 
+  if (loading) {
+    return <LoadingScreen message="Loading your data..." />;
+  }
+
   const filteredAuthorities = authorities.filter(
     (a) =>
-      a.name.toLowerCase().includes(authSearchTerm.toLowerCase()) ||
-      a.description.toLowerCase().includes(authSearchTerm.toLowerCase())
+      a.authorityName.toLowerCase().includes(authSearchTerm.toLowerCase())
   );
 
-  const filteredUsers = users.filter((u) => {
+  const filteredUsers = (users).filter((u) => {
     const matchesSearch =
       u.username.toLowerCase().includes(userSearch.toLowerCase()) ||
       (u.email || '').toLowerCase().includes(userSearch.toLowerCase());
@@ -163,7 +192,7 @@ const UsersPage = () => {
           >
             Roles
           </button>
-          {currentUser?.role?.name === 'SUPERUSER' && (
+          {currentUser?.roles=== 'ROOT' && (
             <button
               onClick={() => setActiveTab('authorities')}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'authorities' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
@@ -215,6 +244,14 @@ const UsersPage = () => {
             </div>
           </div>
 
+          <Toast 
+            message={toastMessage} 
+            submessage={toastSubMessage}
+            type={toastType}
+            isVisible={toastVisible}
+            onClose={() => setToastVisible(false)}
+          />
+
           <Card>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-200">
@@ -238,7 +275,7 @@ const UsersPage = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <Badge
                             color={
-                              u.role?.name === 'SUPERUSER'
+                              u.role?.name === 'ROOT'
                                 ? 'red'
                                 : u.role?.name === 'ADMIN'
                                 ? 'blue'
@@ -349,7 +386,7 @@ const UsersPage = () => {
         </div>
       )}
 
-      {activeTab === 'authorities' && currentUser?.role?.name === 'SUPERUSER' && (
+      {activeTab === 'authorities' && currentUser?.roles === 'ROOT' && (
         <div className="space-y-4">
           <div className="flex justify-end">
             <Button onClick={() => setIsAuthModalOpen(true)}>
@@ -440,19 +477,19 @@ const UsersPage = () => {
                 value={userForm.role?.id || ''}
                 onChange={(e) => {
                   const newRoleId = e.target.value;
-                  const roleDef = roles.find((r) => r.id === newRoleId);
+                  const roleDef = roles.find((r) => r.roleId === newRoleId);
                   setUserForm({
                     ...userForm,
-                    role: roleDef ? { id: roleDef.id, name: roleDef.name } : null,
+                    role: roleDef ? { id: roleDef.roleId, name: roleDef.roleName } : null,
                     authorities: roleDef
                       ? (roleDef.authorities || [])
-                          .map((authName) => authorities.find((a) => a.name === authName))
+                          .map((authName) => authorities.find((a) => a.authorityName === authName))
                           .filter(Boolean)
-                          .map((a) => ({ id: a.id, name: a.name }))
+                          .map((a) => ({ id: a.authorityId, name: a.authorityName }))
                       : [],
                   });
                 }}
-                options={roles.map((r) => ({ value: r.id, label: r.name }))}
+                options={roles.map((r) => ({ value: r.roleId, label: r.roleName }))}
               />
 
               <div className="mb-4">
@@ -463,7 +500,7 @@ const UsersPage = () => {
                 />
               </div>
 
-              <div className="mb-4">
+              {editingUser && (<div className="mb-4">
                 <label className="block text-sm font-medium text-slate-700 mb-2">Assign Authorities</label>
                 <div className="mb-2 relative">
                   <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
@@ -479,11 +516,10 @@ const UsersPage = () => {
                   {filteredAuthorities.length > 0 ? (
                     filteredAuthorities.map((auth) => (
                       <Checkbox
-                        key={auth.id}
-                        label={auth.name}
-                        checked={userForm.authorities?.some((a) => a.id === auth.id)}
+                        key={auth.authorityId}
+                        label={auth.authorityName}
+                        checked={userForm.authorities?.some((a) => a.id === auth.authorityId)}
                         onChange={() => handleUserAuthChange(auth)}
-                        title={auth.description}
                       />
                     ))
                   ) : (
@@ -491,7 +527,7 @@ const UsersPage = () => {
                   )}
                 </div>
                 <p className="text-xs text-slate-500 mt-1">Check permissions to explicitly grant them to this user.</p>
-              </div>
+              </div> )}
 
               <div className="flex justify-end space-x-2 mt-6 pt-4 border-t border-slate-100">
                 <Button type="button" variant="outline" onClick={() => setIsUserModalOpen(false)}>

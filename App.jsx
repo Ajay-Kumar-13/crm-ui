@@ -8,20 +8,25 @@ import UsersPage from './pages/Users';
 import LeadsPage from './pages/Leads';
 import CompaniesPage from './pages/Companies';
 import Trap from './pages/Trap';
+import { LoadingScreen } from './components/ui';
 
 const ProtectedRoute = ({ children, roles }) => {
-  const { isAuthenticated, user, backendError } = useApp();
+  const { isAuthenticated, user, backendError, authLoading } = useApp();
   const location = useLocation();
 
   if (backendError) {
     return <Trap />;
   }
 
+  if (authLoading) {
+    return <LoadingScreen message="Loading your data..." />;
+  }
+
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (roles && user && !roles.includes(user.role?.name)) {
+  if (roles && user && !roles.includes(user.roles)) {
     return <div className="p-8 text-center text-red-500">Access Denied: You do not have permission to view this page.</div>;
   }
 
@@ -51,7 +56,7 @@ const AppRoutes = () => {
         <Route
           path="users"
           element={
-            <ProtectedRoute roles={['ADMIN', 'SUPERUSER']}>
+            <ProtectedRoute roles={['ADMIN', 'ROOT']}>
               <UsersPage />
             </ProtectedRoute>
           }
@@ -69,7 +74,7 @@ const AppRoutes = () => {
         <Route
           path="companies"
           element={
-            <ProtectedRoute roles={['SUPERUSER']}>
+            <ProtectedRoute roles={['ROOT']}>
               <CompaniesPage />
             </ProtectedRoute>
           }
