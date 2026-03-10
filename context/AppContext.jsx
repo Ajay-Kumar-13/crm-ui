@@ -5,6 +5,8 @@ import { useAuthorities } from '../hooks/useAuthorities';
 import { useRoles } from '../hooks/useRoles';
 import { fetchAccessToken } from '../utils/system-utils';
 import { jwtDecode } from 'jwt-decode';
+import { saveUser } from '../services/saveUser';
+import {useSaveUser} from '../hooks/useSaveUser';
 
 const AppContext = createContext(undefined);
 
@@ -45,6 +47,7 @@ export const AppProvider = ({ children }) => {
   const { data: crm_users, isLoading: usersLoading } = useUsers(accessToken);
   const { data: crm_authorities, isLoading: authoritiesLoading } = useAuthorities(accessToken);
   const { data: crm_roles, isLoading: rolesLoading } = useRoles(accessToken);
+  const createUser = useSaveUser();
 
   useEffect(() => {
       console.log("PROFILE_ACTIVE: ", import.meta.env.VITE_PROFILE_ACTIVE);
@@ -82,7 +85,10 @@ export const AppProvider = ({ children }) => {
   const triggerBackendError = () => setBackendError(true);
   const resetBackendError = () => setBackendError(false);
 
-  const addUser = (newUser) => setUsers([...users, newUser]);
+  const addUser = (newUser) => {
+    const savedUser = createUser.mutate({userData: newUser, accessToken: accessToken});
+  };
+
   const updateUser = (id, updates) => {
     setUsers(users.map((u) => (u.id === id ? { ...u, ...updates } : u)));
   };

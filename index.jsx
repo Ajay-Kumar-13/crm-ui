@@ -24,6 +24,7 @@ if (`${import.meta.env.VITE_PROFILE_ACTIVE}`.match('local')) {
       this.namespace="api";
       this.get("/admin/users", users);
       this.post("/auth/login", accessToken);
+      this.post("/admin/users", {})
       this.get("/admin/authorities", authorities);
       this.get("/admin/roles", roles);
       this.get("/admin/authorities/:roleId", authorities);

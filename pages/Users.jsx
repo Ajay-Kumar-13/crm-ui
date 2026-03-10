@@ -95,8 +95,8 @@ const UsersPage = () => {
     const payload = {
       username: userForm.username,
       email: userForm.email,
-      role: userForm.role,
-      authorities: userForm.authorities,
+      roleId: userForm.role.id,
+      password: userForm.username + '123', // Default password, should be changed on first login
       accountActive: userForm.accountActive,
     };
 
@@ -104,10 +104,7 @@ const UsersPage = () => {
       updateUser(editingUser.id, payload);
       showToast('User updated successfully', '', 'success');
     } else {
-      addUser({
-        id: `u-${Date.now()}`,
-        ...payload,
-      });
+      addUser(payload);
       showToast('User added successfully', `Default Credentials has been shared to ${userForm.email}`, 'success');
     }
     setIsUserModalOpen(false);
