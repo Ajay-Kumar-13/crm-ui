@@ -389,7 +389,7 @@ const UsersPage = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <Badge color="blue">{r.roleName}</Badge>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600"></td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{r.roleDesc}</td>
                       <td className="px-6 py-4 text-sm text-slate-500 max-w-md truncate">{roleAuthorities[r.roleId]?.map(a => a.authorityName).join(', ') || '-'}</td>
                     </tr>
                   ))}
@@ -419,8 +419,8 @@ const UsersPage = () => {
                 <tbody className="bg-white divide-y divide-slate-200">
                   {authorities.map((a) => (
                     <tr key={a.id}>
-                      <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-slate-700">{a.name}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{a.description}</td>
+                      <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-slate-700">{a.authorityName}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{a.authorityDesc}</td>
                     </tr>
                   ))}
                 </tbody>
