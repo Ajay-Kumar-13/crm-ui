@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Card, Button, Input, Select, Badge, Checkbox, LoadingScreen, Toast } from '../components/ui';
 import { Edit2, Shield, UserPlus, Power, CheckCircle, XCircle, Users, Lock, ShieldCheck, Search, Eye, X } from 'lucide-react';
@@ -25,6 +25,8 @@ const UsersPage = () => {
   const [toastSubMessage, setToastSubMessage] = useState('');
   const [toastType, setToastType] = useState('info');
 
+  const [roleAuthorities, setRoleAuthorities] = useState({}); // Cache for role authorities
+
   const [userForm, setUserForm] = useState({
     username: '',
     email: '',
@@ -34,6 +36,18 @@ const UsersPage = () => {
   });
   const [roleForm, setRoleForm] = useState({ name: '', description: '', authorities: [] });
   const [authForm, setAuthForm] = useState({ name: '', description: '' });
+
+  useEffect(() => {
+    const fetchDefaultRoleAuthorities = async () => {
+      const roleAuths = {};
+      for (const role of roles) {
+        const auths = await fetchRoleAuthorities(accessToken, role.roleId);
+        roleAuths[role.roleId] = auths;
+      }
+      setRoleAuthorities(roleAuths);
+    }
+    fetchDefaultRoleAuthorities();
+  }, []);
 
   const showToast = (message, submessage, type = 'info') => {
     setToastMessage(message);
@@ -58,7 +72,7 @@ const UsersPage = () => {
       console.log(roles);
       // TODO: change default root to EMPLOYEE
       const defaultRole = roles.find((r) => r.roleName === 'ROOT');
-      const defaultRoleAuthorities = await fetchRoleAuthorities(accessToken, defaultRole.roleId);
+      const defaultRoleAuthorities = roleAuthorities[defaultRole.roleId];
       
       setUserForm({
         username: '',
@@ -371,12 +385,12 @@ const UsersPage = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
                   {roles.map((r) => (
-                    <tr key={r.id}>
+                    <tr key={r.roleId}>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <Badge color="blue">{r.name}</Badge>
+                        <Badge color="blue">{r.roleName}</Badge>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{r.description}</td>
-                      <td className="px-6 py-4 text-sm text-slate-500 max-w-md truncate">{r.authorities.join(', ')}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{r.roleDesc}</td>
+                      <td className="px-6 py-4 text-sm text-slate-500 max-w-md truncate">{roleAuthorities[r.roleId]?.map(a => a.authorityName).join(', ') || '-'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -405,8 +419,8 @@ const UsersPage = () => {
                 <tbody className="bg-white divide-y divide-slate-200">
                   {authorities.map((a) => (
                     <tr key={a.id}>
-                      <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-slate-700">{a.name}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{a.description}</td>
+                      <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-slate-700">{a.authorityName}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{a.authorityDesc}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -563,15 +577,15 @@ const UsersPage = () => {
               />
 
               <div className="mb-4">
-                <label className="block text-sm font-medium text-slate-700 mb-2">Default Authorities</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Existing Authorities</label>
                 <div className="max-h-60 overflow-y-auto border border-slate-300 p-3 rounded-md bg-slate-50 grid grid-cols-1 md:grid-cols-2 gap-2">
                   {authorities.map((auth) => (
                     <Checkbox
-                      key={auth.id}
-                      label={auth.name}
+                      key={auth.authorityId}
+                      label={auth.authorityName}
                       checked={roleForm.authorities?.includes(auth.name)}
                       onChange={() => handleRoleAuthChange(auth.name)}
-                      title={auth.description}
+                      // title={auth.description}
                     />
                   ))}
                 </div>

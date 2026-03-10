@@ -19,6 +19,7 @@ export const AppProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [accessToken, setAccessToken] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [backendError, setBackendError] = useState(false);
 
   useEffect(() => {
@@ -47,13 +48,14 @@ export const AppProvider = ({ children }) => {
 
   useEffect(() => {
       console.log("PROFILE_ACTIVE: ", import.meta.env.VITE_PROFILE_ACTIVE);
-      if(!usersLoading && crm_users && crm_authorities && crm_roles) {
+      if(!usersLoading && !rolesLoading && !authoritiesLoading && crm_users && crm_authorities && crm_roles) {
         setUsers(crm_users);
         setLeads(MOCK_LEADS);
         setCompanies(MOCK_COMPANIES);
         setAuthorities(crm_authorities);
         setRoles(crm_roles);
         setNotifications(MOCK_NOTIFICATIONS);
+        setLoading(false);
       }
 
   }, [crm_users, crm_authorities, crm_roles]);
@@ -137,7 +139,7 @@ export const AppProvider = ({ children }) => {
         sendNotification,
         markNotificationAsRead,
         accessToken,
-        loading: usersLoading,
+        loading,
         authLoading
       }}
     >
