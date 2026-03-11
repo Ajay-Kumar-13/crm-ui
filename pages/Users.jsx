@@ -95,8 +95,8 @@ const UsersPage = () => {
     const payload = {
       username: userForm.username,
       email: userForm.email,
-      role: userForm.role,
-      authorities: userForm.authorities,
+      roleId: userForm.role.id,
+      password: userForm.username + '123', // Default password, should be changed on first login
       accountActive: userForm.accountActive,
     };
 
@@ -104,10 +104,7 @@ const UsersPage = () => {
       updateUser(editingUser.id, payload);
       showToast('User updated successfully', '', 'success');
     } else {
-      addUser({
-        id: `u-${Date.now()}`,
-        ...payload,
-      });
+      addUser(payload);
       showToast('User added successfully', `Default Credentials has been shared to ${userForm.email}`, 'success');
     }
     setIsUserModalOpen(false);
@@ -145,9 +142,8 @@ const UsersPage = () => {
     e.preventDefault();
     if (roleForm.name) {
       addRole({
-        id: `r-${Date.now()}`,
-        name: roleForm.name.toUpperCase().replace(/\s+/g, '_'),
-        description: roleForm.description || '',
+        roleName: roleForm.name.toUpperCase().replace(/\s+/g, '_'),
+        roleDesc: roleForm.description || '',
         authorities: roleForm.authorities || [],
       });
       setRoleForm({ name: '', description: '', authorities: [] });
@@ -160,9 +156,8 @@ const UsersPage = () => {
     e.preventDefault();
     if (authForm.name) {
       addAuthority({
-        id: `a-${Date.now()}`,
-        name: authForm.name.toUpperCase().replace(/\s+/g, '_'),
-        description: authForm.description || '',
+        authorityName: authForm.name.toUpperCase().replace(/\s+/g, '_'),
+        authorityDesc: authForm.description || '',
       });
       setAuthForm({ name: '', description: '' });
       setIsAuthModalOpen(false);
@@ -390,7 +385,7 @@ const UsersPage = () => {
                         <Badge color="blue">{r.roleName}</Badge>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{r.roleDesc}</td>
-                      <td className="px-6 py-4 text-sm text-slate-500 max-w-md truncate">{roleAuthorities[r.roleId]?.map(a => a.authorityName).join(', ') || '-'}</td>
+                      <td className="px-6 py-4 text-sm text-slate-500 max-w-md truncate">{roleAuthorities[r.roleId]?.map(a => a.name).join(', ') || '-'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -418,7 +413,7 @@ const UsersPage = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
                   {authorities.map((a) => (
-                    <tr key={a.id}>
+                    <tr key={a.authorityId}>
                       <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-slate-700">{a.authorityName}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{a.authorityDesc}</td>
                     </tr>
@@ -583,9 +578,9 @@ const UsersPage = () => {
                     <Checkbox
                       key={auth.authorityId}
                       label={auth.authorityName}
-                      checked={roleForm.authorities?.includes(auth.name)}
-                      onChange={() => handleRoleAuthChange(auth.name)}
-                      // title={auth.description}
+                      checked={roleForm.authorities?.includes(auth.authorityId)}
+                      onChange={() => handleRoleAuthChange(auth.authorityId)}
+                      title={auth.authorityDesc}
                     />
                   ))}
                 </div>
