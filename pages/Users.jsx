@@ -387,7 +387,7 @@ const UsersPage = () => {
                         <Badge color="blue">{r.roleName}</Badge>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{r.roleDesc}</td>
-                      <td className="px-6 py-4 text-sm text-slate-500 max-w-md truncate">{roleAuthorities[r.roleId]?.map(a => a.authorityName).join(', ') || '-'}</td>
+                      <td className="px-6 py-4 text-sm text-slate-500 max-w-md truncate">{roleAuthorities[r.roleId]?.map(a => a.name).join(', ') || '-'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -415,7 +415,7 @@ const UsersPage = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
                   {authorities.map((a) => (
-                    <tr key={a.id}>
+                    <tr key={a.authorityId}>
                       <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-slate-700">{a.authorityName}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{a.authorityDesc}</td>
                     </tr>
