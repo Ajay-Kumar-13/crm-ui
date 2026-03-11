@@ -142,9 +142,8 @@ const UsersPage = () => {
     e.preventDefault();
     if (roleForm.name) {
       addRole({
-        id: `r-${Date.now()}`,
-        name: roleForm.name.toUpperCase().replace(/\s+/g, '_'),
-        description: roleForm.description || '',
+        roleName: roleForm.name.toUpperCase().replace(/\s+/g, '_'),
+        roleDesc: roleForm.description || '',
         authorities: roleForm.authorities || [],
       });
       setRoleForm({ name: '', description: '', authorities: [] });
@@ -157,9 +156,8 @@ const UsersPage = () => {
     e.preventDefault();
     if (authForm.name) {
       addAuthority({
-        id: `a-${Date.now()}`,
-        name: authForm.name.toUpperCase().replace(/\s+/g, '_'),
-        description: authForm.description || '',
+        authorityName: authForm.name.toUpperCase().replace(/\s+/g, '_'),
+        authorityDesc: authForm.description || '',
       });
       setAuthForm({ name: '', description: '' });
       setIsAuthModalOpen(false);
@@ -580,9 +578,9 @@ const UsersPage = () => {
                     <Checkbox
                       key={auth.authorityId}
                       label={auth.authorityName}
-                      checked={roleForm.authorities?.includes(auth.name)}
-                      onChange={() => handleRoleAuthChange(auth.name)}
-                      // title={auth.description}
+                      checked={roleForm.authorities?.includes(auth.authorityId)}
+                      onChange={() => handleRoleAuthChange(auth.authorityId)}
+                      title={auth.authorityDesc}
                     />
                   ))}
                 </div>

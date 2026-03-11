@@ -28,6 +28,8 @@ if (`${import.meta.env.VITE_PROFILE_ACTIVE}`.match('local')) {
       this.get("/admin/authorities", authorities);
       this.get("/admin/roles", roles);
       this.get("/admin/authorities/:roleId", roleAuthorities);
+      this.post("/admin/authorities", {});
+      this.post("/admin/roles", {});
     }
   })
 }

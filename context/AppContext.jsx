@@ -1,12 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { MOCK_USERS, MOCK_LEADS, MOCK_COMPANIES, MOCK_AUTHORITIES, MOCK_ROLES, MOCK_NOTIFICATIONS } from '../services/mockData';
 import { useUsers } from '../hooks/useUsers';
-import { useAuthorities } from '../hooks/useAuthorities';
-import { useRoles } from '../hooks/useRoles';
+import { useAuthorities, useSaveAuthority } from '../hooks/useAuthorities';
+import { useRoles, useSaveRole } from '../hooks/useRoles';
 import { fetchAccessToken } from '../utils/system-utils';
 import { jwtDecode } from 'jwt-decode';
-import { saveUser } from '../services/saveUser';
-import {useSaveUser} from '../hooks/useSaveUser';
+import {useSaveUser} from '../hooks/useUsers';
 
 const AppContext = createContext(undefined);
 
@@ -48,6 +47,8 @@ export const AppProvider = ({ children }) => {
   const { data: crm_authorities, isLoading: authoritiesLoading } = useAuthorities(accessToken);
   const { data: crm_roles, isLoading: rolesLoading } = useRoles(accessToken);
   const createUser = useSaveUser();
+  const createRole = useSaveRole();
+  const createAuthority = useSaveAuthority();
 
   useEffect(() => {
       console.log("PROFILE_ACTIVE: ", import.meta.env.VITE_PROFILE_ACTIVE);
@@ -98,9 +99,13 @@ export const AppProvider = ({ children }) => {
     setLeads(leads.map((l) => (l.id === id ? { ...l, ...updates } : l)));
   };
 
-  const addAuthority = (auth) => setAuthorities([...authorities, auth]);
+  const addAuthority = (auth) => {
+    const savedAuth = createAuthority.mutate({authority: auth, accessToken: accessToken});
+  };
   const addCompany = (comp) => setCompanies([...companies, comp]);
-  const addRole = (role) => setRoles([...roles, role]);
+  const addRole = (role) => {
+    const savedRole = createRole.mutate({roleData: role, accessToken: accessToken});
+  };
 
   const sendNotification = (toUserId, message) => {
     if (!user) return;

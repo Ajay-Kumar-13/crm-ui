@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query"
-import { fetchAuthorities } from "../services/fetchAuthorities";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { fetchAuthorities, saveAuthority } from "../services/fetchAuthorities";
 
 export const useAuthorities = (accessToken) => {
     const query = useQuery({
@@ -14,4 +14,14 @@ export const useAuthorities = (accessToken) => {
         isLoading: query.isLoading,
         error: query.error
     };
+}
+
+export const useSaveAuthority = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ accessToken, authority }) => saveAuthority({ accessToken, authority }),
+        onSuccess: (data => {
+            queryClient.invalidateQueries(['authorities']);
+        })
+    });
 }
