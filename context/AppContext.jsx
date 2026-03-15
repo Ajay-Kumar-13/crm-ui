@@ -11,7 +11,6 @@ const AppContext = createContext(undefined);
 
 export const AppProvider = ({ children }) => {
   const [user, setUser] = useState();
-
   const [users, setUsers] = useState([]);
   const [leads, setLeads] = useState([]);
   const [companies, setCompanies] = useState([]);
@@ -23,13 +22,26 @@ export const AppProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [backendError, setBackendError] = useState(false);
 
+  const { data: crm_users, isLoading: usersLoading } = useUsers(accessToken);
+  const { data: crm_authorities, isLoading: authoritiesLoading } = useAuthorities(accessToken);
+  const { data: crm_roles, isLoading: rolesLoading } = useRoles(accessToken);
+  const createUser = useSaveUser();
+  const createRole = useSaveRole();
+  const createAuthority = useSaveAuthority();
+
+
   useEffect(() => {
     const token = localStorage.getItem('access_token');
     if (token) {
       const userFromToken = jwtDecode(token);
-      setUser(userFromToken);
-      setAccessToken(token);
-      setAuthLoading(false);
+      if (isTokenExpired(token)) {
+        localStorage.removeItem('access_token');
+        setAuthLoading(false);
+      } else {
+        setUser(userFromToken);
+        setAccessToken(token);
+        setAuthLoading(false);
+      }
     } else {
       setAuthLoading(false);
     }
@@ -42,13 +54,6 @@ export const AppProvider = ({ children }) => {
       localStorage.removeItem('access_token');
     }
   }, [user]);
-
-  const { data: crm_users, isLoading: usersLoading } = useUsers(accessToken);
-  const { data: crm_authorities, isLoading: authoritiesLoading } = useAuthorities(accessToken);
-  const { data: crm_roles, isLoading: rolesLoading } = useRoles(accessToken);
-  const createUser = useSaveUser();
-  const createRole = useSaveRole();
-  const createAuthority = useSaveAuthority();
 
   useEffect(() => {
       console.log("PROFILE_ACTIVE: ", import.meta.env.VITE_PROFILE_ACTIVE);
@@ -63,6 +68,16 @@ export const AppProvider = ({ children }) => {
       }
 
   }, [crm_users, crm_authorities, crm_roles]);
+
+  const isTokenExpired = (token) => {
+    try {
+      const decoded = jwtDecode(token);
+      const currentTime = Date.now() / 1000; // in seconds
+      return decoded.exp < currentTime;
+    } catch (error) {
+      return true; // If token is invalid, treat it as expired
+    }
+  }
 
   const login = async (authenticationObject) => {
     if (backendError) throw new Error('Backend Down');
