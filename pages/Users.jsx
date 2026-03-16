@@ -41,7 +41,7 @@ const UsersPage = () => {
     const fetchDefaultRoleAuthorities = async () => {
       const roleAuths = {};
       for (const role of roles) {
-        const auths = await fetchRoleAuthorities(accessToken, role.roleId);
+        const auths = await fetchRoleAuthorities(role.roleId);
         roleAuths[role.roleId] = auths;
       }
       setRoleAuthorities(roleAuths);
