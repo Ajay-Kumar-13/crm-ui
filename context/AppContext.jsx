@@ -3,7 +3,7 @@ import { MOCK_USERS, MOCK_LEADS, MOCK_COMPANIES, MOCK_AUTHORITIES, MOCK_ROLES, M
 import { useUsers } from '../hooks/useUsers';
 import { useAuthorities, useSaveAuthority } from '../hooks/useAuthorities';
 import { useRoles, useSaveRole } from '../hooks/useRoles';
-import { fetchAccessToken } from '../utils/system-utils';
+import { fetchAccessToken, refreshAccessToken } from '../utils/system-utils';
 import { jwtDecode } from 'jwt-decode';
 import {useSaveUser} from '../hooks/useUsers';
 
@@ -31,21 +31,46 @@ export const AppProvider = ({ children }) => {
 
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      const userFromToken = jwtDecode(token);
-      if (isTokenExpired(token)) {
-        localStorage.removeItem('access_token');
-        setAuthLoading(false);
-      } else {
-        setUser(userFromToken);
-        setAccessToken(token);
+    const initializeAuth = async () => {
+      try {
+        const storedToken = localStorage.getItem("access_token");
+
+        if (!storedToken) {
+          setAuthLoading(false);
+        }
+
+        if (isTokenExpired(storedToken)) {
+          try {
+            const data = await refreshAccessToken();
+            const newToken = data.accessToken;
+
+            localStorage.setItem("access_token", newToken);
+
+            const userFromToken = jwtDecode(newToken);
+
+            setAccessToken(newToken);
+            setUser(userFromToken);
+          } catch (error) {
+            // refresh token expired
+            localStorage.removeItem("access_token");
+            setUser(null);
+            setAccessToken(null);
+          }
+        } else {
+          const userFromToken = jwtDecode(storedToken);
+
+          setUser(userFromToken);
+          setAccessToken(storedToken);
+        }
+      } catch (err) {
+        console.error("Auth initialization failed:", err);
+      } finally {
         setAuthLoading(false);
       }
-    } else {
-      setAuthLoading(false);
-    }
-  }, [])
+    };
+
+    initializeAuth();
+  }, []);
 
   useEffect(() => {
     if (user) {
