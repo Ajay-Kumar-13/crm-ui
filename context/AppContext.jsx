@@ -109,9 +109,9 @@ export const AppProvider = ({ children }) => {
     console.log("authenticationObject: ", authenticationObject);
 
     const token = await fetchAccessToken(authenticationObject);
-    if (token && token.jwtToken) {
-      setAccessToken(token.jwtToken);
-      const userFromToken = jwtDecode(token.jwtToken);
+    if (token && token.accessToken) {
+      setAccessToken(token.accessToken);
+      const userFromToken = jwtDecode(token.accessToken);
       setUser(userFromToken);
       return true;
     }
