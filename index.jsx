@@ -6,7 +6,7 @@ import { createServer } from 'miragejs';
 import {users} from './mirage-server/mocks/users';
 import {authorities, roleAuthorities} from './mirage-server/mocks/authorities';
 import {roles} from './mirage-server/mocks/roles';
-import { accessToken } from './mirage-server/mocks/accesstoken';
+import { accessToken, refreshToken } from './mirage-server/mocks/accesstoken';
 
 const queryClient = new QueryClient();
 
@@ -24,6 +24,7 @@ if (`${import.meta.env.VITE_PROFILE_ACTIVE}`.match('local')) {
       this.namespace="api";
       this.get("/admin/users", users);
       this.post("/auth/login", accessToken);
+      this.post("/auth/refresh", refreshToken);
       this.post("/admin/users", {})
       this.get("/admin/authorities", authorities);
       this.get("/admin/roles", roles);

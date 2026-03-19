@@ -69,7 +69,6 @@ const UsersPage = () => {
       });
     } else {
       setEditingUser(null);
-      console.log(roles);
       // TODO: change default root to EMPLOYEE
       const defaultRole = roles.find((r) => r.roleName === 'ROOT');
       const defaultRoleAuthorities = roleAuthorities[defaultRole.roleId];

@@ -106,7 +106,6 @@ export const AppProvider = ({ children }) => {
 
   const login = async (authenticationObject) => {
     if (backendError) throw new Error('Backend Down');
-    console.log("authenticationObject: ", authenticationObject);
 
     const token = await fetchAccessToken(authenticationObject);
     if (token && token.accessToken) {
