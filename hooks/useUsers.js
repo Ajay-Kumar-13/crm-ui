@@ -1,5 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchUsers } from "../services/fetchUsers";
+import { saveUser } from "../services/saveUser";
 
 export const useUsers = (accessToken) => {    
     const query = useQuery({
@@ -14,4 +15,14 @@ export const useUsers = (accessToken) => {
         isLoading: query.isLoading,
         error: query.error
     };
+}
+
+export const useSaveUser = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({userData, accessToken}) => saveUser(userData, accessToken),
+        onSuccess: (data) =>{
+            queryClient.invalidateQueries('users');
+        }
+    })
 }

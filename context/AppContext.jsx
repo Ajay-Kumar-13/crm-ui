@@ -1,16 +1,16 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { MOCK_USERS, MOCK_LEADS, MOCK_COMPANIES, MOCK_AUTHORITIES, MOCK_ROLES, MOCK_NOTIFICATIONS } from '../services/mockData';
 import { useUsers } from '../hooks/useUsers';
-import { useAuthorities } from '../hooks/useAuthorities';
-import { useRoles } from '../hooks/useRoles';
-import { fetchAccessToken } from '../utils/system-utils';
+import { useAuthorities, useSaveAuthority } from '../hooks/useAuthorities';
+import { useRoles, useSaveRole } from '../hooks/useRoles';
+import { fetchAccessToken, refreshAccessToken } from '../utils/system-utils';
 import { jwtDecode } from 'jwt-decode';
+import {useSaveUser} from '../hooks/useUsers';
 
 const AppContext = createContext(undefined);
 
 export const AppProvider = ({ children }) => {
   const [user, setUser] = useState();
-
   const [users, setUsers] = useState([]);
   const [leads, setLeads] = useState([]);
   const [companies, setCompanies] = useState([]);
@@ -22,17 +22,55 @@ export const AppProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [backendError, setBackendError] = useState(false);
 
+  const { data: crm_users, isLoading: usersLoading } = useUsers(accessToken);
+  const { data: crm_authorities, isLoading: authoritiesLoading } = useAuthorities(accessToken);
+  const { data: crm_roles, isLoading: rolesLoading } = useRoles(accessToken);
+  const createUser = useSaveUser();
+  const createRole = useSaveRole();
+  const createAuthority = useSaveAuthority();
+
+
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      const userFromToken = jwtDecode(token);
-      setUser(userFromToken);
-      setAccessToken(token);
-      setAuthLoading(false);
-    } else {
-      setAuthLoading(false);
-    }
-  }, [])
+    const initializeAuth = async () => {
+      try {
+        const storedToken = localStorage.getItem("access_token");
+
+        if (!storedToken) {
+          setAuthLoading(false);
+        }
+
+        if (isTokenExpired(storedToken)) {
+          try {
+            const data = await refreshAccessToken();
+            const newToken = data.accessToken;
+
+            localStorage.setItem("access_token", newToken);
+
+            const userFromToken = jwtDecode(newToken);
+
+            setAccessToken(newToken);
+            setUser(userFromToken);
+          } catch (error) {
+            // refresh token expired
+            localStorage.removeItem("access_token");
+            setUser(null);
+            setAccessToken(null);
+          }
+        } else {
+          const userFromToken = jwtDecode(storedToken);
+
+          setUser(userFromToken);
+          setAccessToken(storedToken);
+        }
+      } catch (err) {
+        console.error("Auth initialization failed:", err);
+      } finally {
+        setAuthLoading(false);
+      }
+    };
+
+    initializeAuth();
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -41,10 +79,6 @@ export const AppProvider = ({ children }) => {
       localStorage.removeItem('access_token');
     }
   }, [user]);
-
-  const { data: crm_users, isLoading: usersLoading } = useUsers(accessToken);
-  const { data: crm_authorities, isLoading: authoritiesLoading } = useAuthorities(accessToken);
-  const { data: crm_roles, isLoading: rolesLoading } = useRoles(accessToken);
 
   useEffect(() => {
       console.log("PROFILE_ACTIVE: ", import.meta.env.VITE_PROFILE_ACTIVE);
@@ -60,14 +94,23 @@ export const AppProvider = ({ children }) => {
 
   }, [crm_users, crm_authorities, crm_roles]);
 
+  const isTokenExpired = (token) => {
+    try {
+      const decoded = jwtDecode(token);
+      const currentTime = Date.now() / 1000; // in seconds
+      return decoded.exp < currentTime;
+    } catch (error) {
+      return true; // If token is invalid, treat it as expired
+    }
+  }
+
   const login = async (authenticationObject) => {
     if (backendError) throw new Error('Backend Down');
-    console.log("authenticationObject: ", authenticationObject);
 
     const token = await fetchAccessToken(authenticationObject);
-    if (token && token.jwtToken) {
-      setAccessToken(token.jwtToken);
-      const userFromToken = jwtDecode(token.jwtToken);
+    if (token && token.accessToken) {
+      setAccessToken(token.accessToken);
+      const userFromToken = jwtDecode(token.accessToken);
       setUser(userFromToken);
       return true;
     }
@@ -82,7 +125,10 @@ export const AppProvider = ({ children }) => {
   const triggerBackendError = () => setBackendError(true);
   const resetBackendError = () => setBackendError(false);
 
-  const addUser = (newUser) => setUsers([...users, newUser]);
+  const addUser = (newUser) => {
+    const savedUser = createUser.mutate({userData: newUser, accessToken: accessToken});
+  };
+
   const updateUser = (id, updates) => {
     setUsers(users.map((u) => (u.id === id ? { ...u, ...updates } : u)));
   };
@@ -92,9 +138,13 @@ export const AppProvider = ({ children }) => {
     setLeads(leads.map((l) => (l.id === id ? { ...l, ...updates } : l)));
   };
 
-  const addAuthority = (auth) => setAuthorities([...authorities, auth]);
+  const addAuthority = (auth) => {
+    const savedAuth = createAuthority.mutate({authority: auth, accessToken: accessToken});
+  };
   const addCompany = (comp) => setCompanies([...companies, comp]);
-  const addRole = (role) => setRoles([...roles, role]);
+  const addRole = (role) => {
+    const savedRole = createRole.mutate({roleData: role, accessToken: accessToken});
+  };
 
   const sendNotification = (toUserId, message) => {
     if (!user) return;

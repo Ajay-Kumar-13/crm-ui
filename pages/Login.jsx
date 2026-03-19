@@ -71,9 +71,7 @@ const Login = () => {
 
         <div className="mt-6 text-center text-xs text-slate-400">
           <p>Demo Credentials:</p>
-          <p>super / password</p>
-          <p>admin / password</p>
-          <p>emp1 / password</p>
+          <p>superuser / ajay</p>
         </div>
       </div>
     </div>
