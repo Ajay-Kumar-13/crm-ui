@@ -14,6 +14,7 @@ const UsersPage = () => {
 
   const [viewAuthUser, setViewAuthUser] = useState(null);
   const [editingUser, setEditingUser] = useState(null);
+  const [authoritiesPayload, setAuthoritiesPayload] = useState([]);
   const [authSearchTerm, setAuthSearchTerm] = useState('');
 
   const [userSearch, setUserSearch] = useState('');
@@ -92,14 +93,7 @@ const UsersPage = () => {
   const handleSaveUser = (e) => {
     e.preventDefault();
     if (editingUser) {
-      const payload = {
-        username: userForm.username,
-        email: userForm.email,
-        roleId: userForm.role.id,
-        authorities: userForm.authorities.map((a) => a.id),
-        accountActive: userForm.accountActive,
-      };
-      updateUser(editingUser.id, payload);
+      updateUser(editingUser.id, authoritiesPayload);
       showToast('User updated successfully', '', 'success');
     } else {
       const payload = {
@@ -127,10 +121,17 @@ const UsersPage = () => {
   const handleUserAuthChange = (auth) => {
     const current = userForm.authorities || [];
     const exists = current.some((a) => a.id === auth.authorityId);
+    const existsInPayload = authoritiesPayload.some((a) => a.authorityName === auth.authorityName);
     if (exists) {
       setUserForm({ ...userForm, authorities: current.filter((a) => a.id !== auth.authorityId) });
     } else {
       setUserForm({ ...userForm, authorities: [...current, { id: auth.authorityId, name: auth.authorityName }] });
+    }
+
+    if(existsInPayload) {
+      setAuthoritiesPayload(authoritiesPayload.filter(a => a.authorityName !== auth.authorityName));
+    } else {
+      setAuthoritiesPayload([...authoritiesPayload, { authorityName: auth.authorityName, active: exists ? false : true }]);
     }
   };
 
