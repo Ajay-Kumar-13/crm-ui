@@ -91,18 +91,24 @@ const UsersPage = () => {
 
   const handleSaveUser = (e) => {
     e.preventDefault();
-    const payload = {
-      username: userForm.username,
-      email: userForm.email,
-      roleId: userForm.role.id,
-      password: userForm.username + '123', // Default password, should be changed on first login
-      accountActive: userForm.accountActive,
-    };
-
     if (editingUser) {
+      const payload = {
+        username: userForm.username,
+        email: userForm.email,
+        roleId: userForm.role.id,
+        authorities: userForm.authorities.map((a) => a.id),
+        accountActive: userForm.accountActive,
+      };
       updateUser(editingUser.id, payload);
       showToast('User updated successfully', '', 'success');
     } else {
+      const payload = {
+        username: userForm.username,
+        email: userForm.email,
+        roleId: userForm.role.id,
+        password: userForm.username + '123', // Default password, should be changed on first login
+        accountActive: userForm.accountActive,
+      };
       addUser(payload);
       showToast('User added successfully', `Default Credentials has been shared to ${userForm.email}`, 'success');
     }
@@ -120,9 +126,9 @@ const UsersPage = () => {
 
   const handleUserAuthChange = (auth) => {
     const current = userForm.authorities || [];
-    const exists = current.some((a) => a.id === auth.id);
+    const exists = current.some((a) => a.id === auth.authorityId);
     if (exists) {
-      setUserForm({ ...userForm, authorities: current.filter((a) => a.authorityId !== auth.authorityId) });
+      setUserForm({ ...userForm, authorities: current.filter((a) => a.id !== auth.authorityId) });
     } else {
       setUserForm({ ...userForm, authorities: [...current, { id: auth.authorityId, name: auth.authorityName }] });
     }
@@ -469,7 +475,6 @@ const UsersPage = () => {
                 value={userForm.username}
                 onChange={(e) => setUserForm({ ...userForm, username: e.target.value })}
                 required
-                disabled={!!editingUser}
                 placeholder="janedoe"
               />
               <Input

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchAuthorities, saveAuthority } from "../services/fetchAuthorities";
+import { fetchAuthorities, saveAuthority } from "../services/authorities";
 
 export const useAuthorities = (accessToken) => {
     const query = useQuery({
