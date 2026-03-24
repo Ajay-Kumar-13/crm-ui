@@ -93,7 +93,16 @@ const UsersPage = () => {
   const handleSaveUser = (e) => {
     e.preventDefault();
     if (editingUser) {
-      updateUser(editingUser.id, authoritiesPayload);
+      const payload = {
+        username: userForm.username,
+        email: userForm.email,
+        roleId: userForm.role.id,
+        authorities: authoritiesPayload,
+        accountActive: userForm.accountActive,
+      };
+      console.log(payload);
+      
+      updateUser(editingUser.id, payload);
       showToast('User updated successfully', '', 'success');
     } else {
       const payload = {

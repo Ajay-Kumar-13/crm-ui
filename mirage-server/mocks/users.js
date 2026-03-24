@@ -56,3 +56,37 @@ export const users = [
         "accountActive": true
     }
 ]
+
+export const updatedUser = {
+    "id": "2b87d336-9f21-4ffb-8f2e-4b5bb23f5441",
+    "username": "superuser",
+    "email": "superuser@gmail.com",
+    "role": {
+        "id": "d18f6149-7eaf-47d7-9681-1dec53576945",
+        "name": "ROOT",
+        "description": "This role has all permissions and can perform any action in the system."
+    },
+    "authorities": [
+        {
+            "id": "d11f6002-cc1d-4076-88e4-7282f5b3c7d8",
+            "name": "CREATE",
+            "description": "Allows the user to create new records in the system."
+        },
+        {
+            "id": "3e8a8cb4-6d71-4e81-bce5-259b42c4b034",
+            "name": "READ",
+            "description": "Allows the user to read records in the system."
+        },
+        {
+            "id": "32b34539-6ffc-488c-9944-f7cb94f56825",
+            "name": "UPDATE",
+            "description": "Allows the user to update records in the system."
+        },
+        {
+            "id": "d42f0e2b-a05a-4c4a-80dc-198c7a21d454",
+            "name": "DELETE",
+            "description": "Allows the user to delete records in the system."
+        }
+    ],
+    "accountActive": true
+}
