@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchRoles } from "../services/fetchRoles";
-import { saveRole } from "../services/fetchRoles";
+import { fetchRoles } from "../services/roles";
+import { saveRole } from "../services/roles";
 
 export const useRoles = (accessToken) => {
     const query = useQuery({

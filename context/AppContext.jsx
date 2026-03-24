@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { MOCK_USERS, MOCK_LEADS, MOCK_COMPANIES, MOCK_AUTHORITIES, MOCK_ROLES, MOCK_NOTIFICATIONS } from '../services/mockData';
-import { useUsers } from '../hooks/useUsers';
+import { useUpdateUser, useUsers } from '../hooks/useUsers';
 import { useAuthorities, useSaveAuthority } from '../hooks/useAuthorities';
 import { useRoles, useSaveRole } from '../hooks/useRoles';
 import { fetchAccessToken, refreshAccessToken } from '../utils/system-utils';
@@ -28,16 +28,12 @@ export const AppProvider = ({ children }) => {
   const createUser = useSaveUser();
   const createRole = useSaveRole();
   const createAuthority = useSaveAuthority();
-
+  const updateExistingUser = useUpdateUser();
 
   useEffect(() => {
     const initializeAuth = async () => {
       try {
         const storedToken = localStorage.getItem("access_token");
-
-        if (!storedToken) {
-          setAuthLoading(false);
-        }
 
         if (isTokenExpired(storedToken)) {
           try {
@@ -130,7 +126,7 @@ export const AppProvider = ({ children }) => {
   };
 
   const updateUser = (id, updates) => {
-    setUsers(users.map((u) => (u.id === id ? { ...u, ...updates } : u)));
+    const updatedUser = updateExistingUser.mutate({userId: id, userData: updates});
   };
 
   const addLead = (lead) => setLeads([...leads, lead]);
