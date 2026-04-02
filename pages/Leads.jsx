@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Card, Button, Badge } from '../components/ui';
 import { FileSpreadsheet, Search, UserCheck, X } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 const LeadsPage = () => {
   const { leads, users, updateLead, addLead, user } = useApp();
@@ -12,17 +13,38 @@ const LeadsPage = () => {
   const [selectedLeadId, setSelectedLeadId] = useState(null);
   const [userSearchTerm, setUserSearchTerm] = useState('');
 
+  const fileInputRef = useRef();
+
   const handleImport = () => {
-    alert("Parsing 'leads.xlsx'...\nImported 3 new leads successfully!");
-    addLead({
-      id: `l-imp-${Date.now()}`,
-      companyName: 'Imported Co.',
-      contactName: 'John Import',
-      email: 'john@import.com',
-      value: 15000,
-      status: 'NEW',
-      createdAt: new Date().toISOString(),
-    });
+    fileInputRef.current.click();
+    // alert("Parsing 'leads.xlsx'...\nImported 3 new leads successfully!");
+    // addLead({
+    //   id: `l-imp-${Date.now()}`,
+    //   companyName: 'Imported Co.',
+    //   contactName: 'John Import',
+    //   email: 'john@import.com',
+    //   value: 15000,
+    //   status: 'NEW',
+    //   createdAt: new Date().toISOString(),
+    // });
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const data = new Uint8Array(evt.target.result);
+
+      const workbook = XLSX.read(data, { type: 'array' });
+      console.log(workbook);
+      
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(sheet);
+
+      console.log(jsonData);
+    }
+    reader.readAsArrayBuffer(file);
   };
 
   const filteredLeads = leads.filter((l) => {
@@ -80,10 +102,13 @@ const LeadsPage = () => {
         <h1 className="text-2xl font-bold text-slate-800">
           {user?.role?.name === 'EMPLOYEE' ? 'My Leads' : 'All Leads'}
         </h1>
-        {(user?.role?.name === 'ADMIN' || user?.role?.name === 'SUPERUSER') && (
-          <Button variant="outline" onClick={handleImport}>
-            <FileSpreadsheet className="w-4 h-4 mr-2" /> Import Excel
-          </Button>
+        {(user?.roles === 'ADMIN' || user?.roles === 'SUPERUSER') && (
+          <div>
+            <input type='file' ref={fileInputRef} accept='.xlsx,.xls' style={{display: 'none'}} onChange={handleFileChange}/>
+            <Button variant="outline" onClick={handleImport}>
+              <FileSpreadsheet className="w-4 h-4 mr-2" /> Import Excel
+            </Button>
+          </div>
         )}
       </div>
 
