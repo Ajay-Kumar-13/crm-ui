@@ -31,29 +31,38 @@ const LeadsPage = () => {
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    
+
     const reader = new FileReader();
     reader.onload = (evt) => {
       const data = new Uint8Array(evt.target.result);
-
       const workbook = XLSX.read(data, { type: 'array' });
-      console.log(workbook);
-      
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const jsonData = XLSX.utils.sheet_to_json(sheet);
-
-      console.log(jsonData);
+      const payload = jsonData.map(row => ({
+        "address": row["Address"],
+        "email": row["Email"],
+        "leadSource": row["Lead Source"],
+        "leadState": row["Lead Stage"],
+        "leadSubSource": row["Lead Sub source"],
+        "leadType": row["Lead Type"],
+        "name": row["Name"],
+        "phone": row["Phone"]
+      }));
+      
+      
+      
     }
     reader.readAsArrayBuffer(file);
   };
 
   const filteredLeads = leads.filter((l) => {
-    const matchesSearch =
-      l.companyName.toLowerCase().includes(filter.toLowerCase()) ||
-      l.contactName.toLowerCase().includes(filter.toLowerCase());
-    const matchesStatus = statusFilter === 'ALL' || l.status === statusFilter;
-    const matchesAssignment = user?.role?.name === 'EMPLOYEE' ? l.assignedToUserId === user.id : true;
-    return matchesSearch && matchesStatus && matchesAssignment;
+    // const matchesSearch =
+    //   l.companyName.toLowerCase().includes(filter.toLowerCase()) ||
+    //   l.contactName.toLowerCase().includes(filter.toLowerCase());
+    // const matchesStatus = statusFilter === 'ALL' || l.status === statusFilter;
+    const matchesAssignment = user?.roles === 'EMPLOYEE' ? l.assignedTo === user.id : true;
+    // return matchesSearch && matchesStatus && matchesAssignment;
+    return matchesAssignment;
   });
 
   const getStatusColor = (status) => {
@@ -154,22 +163,22 @@ const LeadsPage = () => {
               {filteredLeads.map((lead) => (
                 <tr key={lead.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-4">
-                    <div className="text-sm font-semibold text-slate-900">{lead.companyName}</div>
-                    <div className="text-sm text-slate-500">{lead.contactName}</div>
+                    {/* <div className="text-sm font-semibold text-slate-900">{lead.companyName}</div> */}
+                    <div className="text-sm text-slate-500">{lead.name}</div>
                     <div className="text-xs text-slate-400">{lead.email}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-700">${lead.value.toLocaleString()}</td>
+                  {/* <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-700">${lead.value.toLocaleString()}</td> */}
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {user?.role?.name === 'EMPLOYEE' ? (
+                    {user?.roles === 'EMPLOYEE' ? (
                       <div className="relative">
                         <select
-                          value={lead.status}
+                          value={lead.leadState}
                           onChange={(e) => updateLead(lead.id, { status: e.target.value })}
                           className="text-xs border-slate-200 bg-white shadow-sm rounded-full py-1 pl-2 pr-6 focus:ring-blue-500 focus:border-blue-500 cursor-pointer appearance-none border"
-                          style={{
-                            color:
-                              getStatusColor(lead.status) === 'green' ? '#15803d' : getStatusColor(lead.status) === 'red' ? '#b91c1c' : '#334155',
-                          }}
+                          // style={{
+                          //   color:
+                          //     getStatusColor(lead.status) === 'green' ? '#15803d' : getStatusColor(lead.status) === 'red' ? '#b91c1c' : '#334155',
+                          // }}
                         >
                           {['NEW', 'CONTACTED', 'QUALIFIED', 'NEGOTIATION', 'WON', 'LOST'].map((s) => (
                             <option key={s} value={s}>

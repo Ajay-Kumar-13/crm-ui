@@ -3,6 +3,7 @@ import { MOCK_USERS, MOCK_LEADS, MOCK_COMPANIES, MOCK_AUTHORITIES, MOCK_ROLES, M
 import { useUpdateUser, useUsers } from '../hooks/useUsers';
 import { useAuthorities, useSaveAuthority } from '../hooks/useAuthorities';
 import { useRoles, useSaveRole } from '../hooks/useRoles';
+import { useLeads } from '../hooks/useLeads';
 import { fetchAccessToken, refreshAccessToken } from '../utils/system-utils';
 import { jwtDecode } from 'jwt-decode';
 import {useSaveUser} from '../hooks/useUsers';
@@ -25,6 +26,8 @@ export const AppProvider = ({ children }) => {
   const { data: crm_users, isLoading: usersLoading } = useUsers(accessToken);
   const { data: crm_authorities, isLoading: authoritiesLoading } = useAuthorities(accessToken);
   const { data: crm_roles, isLoading: rolesLoading } = useRoles(accessToken);
+  const { data: leadsData, isLoading: leadsLoading } = useLeads(accessToken);
+
   const createUser = useSaveUser();
   const createRole = useSaveRole();
   const createAuthority = useSaveAuthority();
@@ -78,9 +81,9 @@ export const AppProvider = ({ children }) => {
 
   useEffect(() => {
       console.log("PROFILE_ACTIVE: ", import.meta.env.VITE_PROFILE_ACTIVE);
-      if(!usersLoading && !rolesLoading && !authoritiesLoading && crm_users && crm_authorities && crm_roles) {
+      if(!usersLoading && !rolesLoading && !authoritiesLoading && !leadsLoading && crm_users && crm_authorities && crm_roles && leadsData) {
         setUsers(crm_users);
-        setLeads(MOCK_LEADS);
+        setLeads(leadsData);
         setCompanies(MOCK_COMPANIES);
         setAuthorities(crm_authorities);
         setRoles(crm_roles);
@@ -88,7 +91,7 @@ export const AppProvider = ({ children }) => {
         setLoading(false);
       }
 
-  }, [crm_users, crm_authorities, crm_roles]);
+  }, [crm_users, crm_authorities, crm_roles, leadsData]);
 
   const isTokenExpired = (token) => {
     try {
