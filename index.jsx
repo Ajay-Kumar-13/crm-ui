@@ -34,6 +34,7 @@ if (`${import.meta.env.VITE_PROFILE_ACTIVE}`.match('local')) {
       this.post("/admin/roles", {});
       this.put("/admin/users/:userId", updatedUser);
       this.get("/admin/leads", leads);
+      this.post("/admin/leads", {});
     }
   })
 }

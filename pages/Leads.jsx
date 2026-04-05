@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext';
 import { Card, Button, Badge } from '../components/ui';
 import { FileSpreadsheet, Search, UserCheck, X } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { useUploadLeads } from '../hooks/useLeads';
 
 const LeadsPage = () => {
   const { leads, users, updateLead, addLead, user } = useApp();
@@ -15,9 +16,10 @@ const LeadsPage = () => {
 
   const fileInputRef = useRef();
 
+  const uploadLeads = useUploadLeads();
+
   const handleImport = () => {
     fileInputRef.current.click();
-    // alert("Parsing 'leads.xlsx'...\nImported 3 new leads successfully!");
     // addLead({
     //   id: `l-imp-${Date.now()}`,
     //   companyName: 'Imported Co.',
@@ -48,8 +50,8 @@ const LeadsPage = () => {
         "name": row["Name"],
         "phone": row["Phone"]
       }));
-      
-      
+      uploadLeads.mutate({ leadsData: payload });
+      alert(`Successfully imported ${payload.length} leads!`);
       
     }
     reader.readAsArrayBuffer(file);
