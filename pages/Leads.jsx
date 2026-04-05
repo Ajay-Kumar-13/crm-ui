@@ -13,6 +13,7 @@ const LeadsPage = () => {
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
   const [selectedLeadId, setSelectedLeadId] = useState(null);
   const [userSearchTerm, setUserSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState('assigned');
 
   const fileInputRef = useRef();
 
@@ -115,14 +116,22 @@ const LeadsPage = () => {
         <h1 className="text-2xl font-bold text-slate-800">
           {user?.role?.name === 'EMPLOYEE' ? 'My Leads' : 'All Leads'}
         </h1>
-        {(user?.roles === 'ADMIN' || user?.roles === 'SUPERUSER') && (
-          <div>
-            <input type='file' ref={fileInputRef} accept='.xlsx,.xls' style={{display: 'none'}} onChange={handleFileChange}/>
-            <Button variant="outline" onClick={handleImport}>
-              <FileSpreadsheet className="w-4 h-4 mr-2" /> Import Excel
-            </Button>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="flex space-x-2 bg-slate-200 p-1 rounded-lg">
+            <button
+              onClick={() => setActiveTab('assigned')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'assigned' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+            >
+              Assigned
+            </button>
+            <button
+              onClick={() => setActiveTab('unassigned')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'unassigned' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+            >
+              Un-assigned
+            </button>
           </div>
-        )}
+        </div>
       </div>
 
       <Card>
@@ -151,6 +160,14 @@ const LeadsPage = () => {
               <option value="LOST">Lost</option>
             </select>
           </div>
+          {(user?.roles === 'ADMIN' || user?.roles === 'SUPERUSER') && (
+            <div>
+              <input type='file' ref={fileInputRef} accept='.xlsx,.xls' style={{display: 'none'}} onChange={handleFileChange}/>
+              <Button variant="outline" onClick={handleImport} className='flex items-center'>
+                <FileSpreadsheet className="w-4 h-4 mr-2" /> Import Excel
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="overflow-x-auto border rounded-lg">
