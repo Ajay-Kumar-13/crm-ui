@@ -79,6 +79,8 @@ const LeadsPage = () => {
         return 'blue';
       case 'NEGOTIATION':
         return 'yellow';
+      case 'CONVERTED':
+        return 'green';
       default:
         return 'gray';
     }
@@ -153,9 +155,9 @@ const LeadsPage = () => {
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Lead Info</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Value</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Info</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">State</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Source</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Assigned To</th>
               </tr>
             </thead>
@@ -163,9 +165,9 @@ const LeadsPage = () => {
               {filteredLeads.map((lead) => (
                 <tr key={lead.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-4">
-                    {/* <div className="text-sm font-semibold text-slate-900">{lead.companyName}</div> */}
-                    <div className="text-sm text-slate-500">{lead.name}</div>
-                    <div className="text-xs text-slate-400">{lead.email}</div>
+                    <div className="text-sm font-semibold text-slate-900">{lead.name}</div>
+                    <div className="text-sm text-slate-500">{lead.email}</div>
+                    {/* <div className="text-xs text-slate-400">{lead.email}</div> */}
                   </td>
                   {/* <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-700">${lead.value.toLocaleString()}</td> */}
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -175,12 +177,12 @@ const LeadsPage = () => {
                           value={lead.leadState}
                           onChange={(e) => updateLead(lead.id, { status: e.target.value })}
                           className="text-xs border-slate-200 bg-white shadow-sm rounded-full py-1 pl-2 pr-6 focus:ring-blue-500 focus:border-blue-500 cursor-pointer appearance-none border"
-                          // style={{
-                          //   color:
-                          //     getStatusColor(lead.status) === 'green' ? '#15803d' : getStatusColor(lead.status) === 'red' ? '#b91c1c' : '#334155',
-                          // }}
+                          style={{
+                            color:
+                              getStatusColor(lead.status) === 'green' ? '#15803d' : getStatusColor(lead.status) === 'red' ? '#b91c1c' : '#334155',
+                          }}
                         >
-                          {['NEW', 'CONTACTED', 'QUALIFIED', 'NEGOTIATION', 'WON', 'LOST'].map((s) => (
+                          {['NEW', 'CONTACTED', 'QUALIFIED', 'NEGOTIATION', 'WON', 'LOST', 'CONVERTED'].map((s) => (
                             <option key={s} value={s}>
                               {s}
                             </option>
@@ -193,25 +195,30 @@ const LeadsPage = () => {
                         </div>
                       </div>
                     ) : (
-                      <Badge color={getStatusColor(lead.status)}>{lead.status}</Badge>
+                      <Badge color={getStatusColor(lead.leadState.toUpperCase())}>{lead.leadState}</Badge>
                     )}
                   </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm font-semibold text-slate-900">{lead.leadSource}</div>
+                    <div className="text-sm text-slate-500">{lead.leadSubSource}</div>
+                    {/* <div className="text-xs text-slate-400">{lead.leadSubSource}</div> */}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {user?.role?.name === 'ADMIN' || user?.role?.name === 'SUPERUSER' ? (
+                    {user?.roles === 'ADMIN' || user?.roles === 'SUPERUSER' ? (
                       <button
                         onClick={() => openAssignmentModal(lead.id)}
                         className="flex items-center space-x-2 text-sm text-slate-700 hover:text-blue-600 px-3 py-1.5 rounded border border-transparent hover:border-blue-200 hover:bg-blue-50 transition-all"
                       >
                         <UserCheck className="w-4 h-4 text-slate-400" />
-                        <span>{users.find((u) => u.id === lead.assignedToUserId)?.name || 'Unassigned'}</span>
+                        <span>{users.find((u) => u.id === lead.assignedTo)?.name || 'Unassigned'}</span>
                       </button>
                     ) : (
                       <div className="flex items-center">
                         <div className="h-6 w-6 rounded-full bg-slate-200 flex items-center justify-center text-xs text-slate-600 font-bold mr-2">
-                          {users.find((u) => u.id === lead.assignedToUserId)?.username?.charAt(0)?.toUpperCase() || '?'}
+                          {users.find((u) => u.id === lead.assignedTo)?.username?.charAt(0)?.toUpperCase() || '?'}
                         </div>
                         <span className="text-sm text-slate-600">
-                          {users.find((u) => u.id === lead.assignedToUserId)?.username || 'Unassigned'}
+                          {users.find((u) => u.id === lead.assignedTo)?.username || 'Unassigned'}
                         </span>
                       </div>
                     )}
