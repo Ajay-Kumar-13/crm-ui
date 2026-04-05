@@ -3,7 +3,7 @@ import { MOCK_USERS, MOCK_LEADS, MOCK_COMPANIES, MOCK_AUTHORITIES, MOCK_ROLES, M
 import { useUpdateUser, useUsers } from '../hooks/useUsers';
 import { useAuthorities, useSaveAuthority } from '../hooks/useAuthorities';
 import { useRoles, useSaveRole } from '../hooks/useRoles';
-import { useLeads } from '../hooks/useLeads';
+import { useAssignLead, useLeads } from '../hooks/useLeads';
 import { fetchAccessToken, refreshAccessToken } from '../utils/system-utils';
 import { jwtDecode } from 'jwt-decode';
 import {useSaveUser} from '../hooks/useUsers';
@@ -32,6 +32,7 @@ export const AppProvider = ({ children }) => {
   const createRole = useSaveRole();
   const createAuthority = useSaveAuthority();
   const updateExistingUser = useUpdateUser();
+  const assignLead = useAssignLead();
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -133,8 +134,9 @@ export const AppProvider = ({ children }) => {
   };
 
   const addLead = (lead) => setLeads([...leads, lead]);
-  const updateLead = (id, updates) => {
-    setLeads(leads.map((l) => (l.id === id ? { ...l, ...updates } : l)));
+  const updateLead = (id, userId) => {
+    assignLead.mutate({ leadId: id, userId: userId });
+    setLeads(leads.map((l) => (l.id === id ? { ...l, assignedTo: userId } : l)));
   };
 
   const addAuthority = (auth) => {

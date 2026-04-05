@@ -1,7 +1,7 @@
 export const leads = [
     {
         "address": "784, MG Road, Mumbai",
-        "assignedTo": null,
+        "assignedTo": "cb0e4cdb-9ff6-4f4b-b46d-e1e564870bee",
         "email": "user1@gmail.com",
         "id": "e59ee54d-8428-4d56-9149-89706c13fcd2",
         "leadSource": "Email Campaign",

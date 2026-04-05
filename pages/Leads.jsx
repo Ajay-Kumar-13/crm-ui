@@ -94,9 +94,9 @@ const LeadsPage = () => {
     setAssignmentModalOpen(true);
   };
 
-  const assignUser = (userId) => {
+  const assignUser = (userId) => {  
     if (selectedLeadId) {
-      updateLead(selectedLeadId, { assignedToUserId: userId });
+      updateLead(selectedLeadId, userId);
       setAssignmentModalOpen(false);
     }
   };
@@ -212,7 +212,7 @@ const LeadsPage = () => {
                         className="flex items-center space-x-2 text-sm text-slate-700 hover:text-blue-600 px-3 py-1.5 rounded border border-transparent hover:border-blue-200 hover:bg-blue-50 transition-all"
                       >
                         <UserCheck className="w-4 h-4 text-slate-400" />
-                        <span>{users.find((u) => u.id === lead.assignedTo)?.name || 'Unassigned'}</span>
+                        <span>{users.find((u) => u.id === lead.assignedTo)?.username || 'Unassigned'}</span>
                       </button>
                     ) : (
                       <div className="flex items-center">
