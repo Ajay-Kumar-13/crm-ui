@@ -1,28 +1,56 @@
 export const users = [
     {
-        "id": "cb0e4cdb-9ff6-4f4b-b46d-e1e564870bee",
+        "id": "0d3715ff-fbd4-4cf1-af1b-dcd25741e620",
         "username": "superuser",
         "email": "superuser@gmail.com",
         "role": {
-            "id": "4be77037-a438-4755-a470-064f3276506f",
-            "name": "ROOT"
+            "id": "5212070d-f61a-4bb0-82d1-8f360356ed5e",
+            "name": "ROOT",
+            "description": "This role has all permissions and can perform any action in the system."
         },
         "authorities": [
             {
-                "id": "a6b9870b-9c80-4686-9f25-1fe27afe2760",
-                "name": "CREATE"
+                "id": "1316f7c0-e8ed-44cc-a20d-7d37db2cc37d",
+                "name": "UPDATE",
+                "description": "Allows the user to update records in the system."
             },
             {
-                "id": "e799e0ec-2534-4a93-9df5-33adc1683c5c",
-                "name": "READ"
+                "id": "00d78d46-7f95-46d2-bbd4-166ce9f950bb",
+                "name": "READ",
+                "description": "Allows the user to read records in the system."
             },
             {
-                "id": "0204f424-9a9a-4bfe-ad0b-367445fe7686",
-                "name": "UPDATE"
+                "id": "6cf27b14-c870-4aa6-9e88-188f65a9d80a",
+                "name": "DELETE",
+                "description": "Allows the user to delete records in the system."
             },
             {
-                "id": "3c2bd567-4492-4f07-aa52-08ff30b36723",
-                "name": "DELETE"
+                "id": "7c27ca39-05fd-4366-ae25-0499c781665e",
+                "name": "CREATE",
+                "description": "Allows the user to create new records in the system."
+            }
+        ],
+        "accountActive": true
+    },
+    {
+        "id": "4bd5e557-5579-4fdb-891e-6f65a47b2ac0",
+        "username": "employee",
+        "email": "employee@gmail.com",
+        "role": {
+            "id": "05f6fde3-e448-4f58-a4fb-79f9e8cf500f",
+            "name": "EMPLOYEE",
+            "description": "To perform Admin Activities"
+        },
+        "authorities": [
+            {
+                "id": "1316f7c0-e8ed-44cc-a20d-7d37db2cc37d",
+                "name": "UPDATE",
+                "description": "Allows the user to update records in the system."
+            },
+            {
+                "id": "00d78d46-7f95-46d2-bbd4-166ce9f950bb",
+                "name": "READ",
+                "description": "Allows the user to read records in the system."
             }
         ],
         "accountActive": true

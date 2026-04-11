@@ -5,6 +5,7 @@ import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import { createServer } from 'miragejs';
 import {updatedUser, users} from './mirage-server/mocks/users';
 import {authorities, roleAuthorities} from './mirage-server/mocks/authorities';
+import {leads} from './mirage-server/mocks/leads';
 import {roles} from './mirage-server/mocks/roles';
 import { accessToken, refreshToken } from './mirage-server/mocks/accesstoken';
 
@@ -31,7 +32,9 @@ if (`${import.meta.env.VITE_PROFILE_ACTIVE}`.match('local')) {
       this.get("/admin/authorities/:roleId", roleAuthorities);
       this.post("/admin/authorities", {});
       this.post("/admin/roles", {});
-      this.put("/admin/users/:userId", updatedUser)
+      this.put("/admin/users/:userId", updatedUser);
+      this.get("/admin/leads", leads);
+      this.post("/admin/leads", {});
     }
   })
 }
