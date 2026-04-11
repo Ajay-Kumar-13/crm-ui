@@ -13,7 +13,7 @@ export const leads = [
     },
     {
         "address": "545, MG Road, Hyderabad",
-        "assignedTo": null,
+        "assignedTo": "4bd5e557-5579-4fdb-891e-6f65a47b2ac0",
         "email": "user2@gmail.com",
         "id": "24c53486-1959-48fb-b9e6-31fda698a6f7",
         "leadSource": "Social Media",

@@ -116,12 +116,13 @@ const LeadsPage = () => {
         <h1 className="text-2xl font-bold text-slate-800">
           {user?.role?.name === 'EMPLOYEE' ? 'My Leads' : 'All Leads'}
         </h1>
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div className="flex space-x-2 bg-slate-200 p-1 rounded-lg">
-            <button
-              onClick={() => setActiveTab('assigned')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'assigned' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
-            >
+        {(user?.roles === 'ADMIN' || user?.roles === 'SUPERUSER') && (
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="flex space-x-2 bg-slate-200 p-1 rounded-lg">
+              <button
+                onClick={() => setActiveTab('assigned')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'assigned' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+              >
               Assigned
             </button>
             <button
@@ -131,7 +132,8 @@ const LeadsPage = () => {
               Un-assigned
             </button>
           </div>
-        </div>
+        </div>)
+        }
       </div>
 
       <Card>
