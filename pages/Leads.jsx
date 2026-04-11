@@ -179,6 +179,7 @@ const LeadsPage = () => {
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Info</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">State</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Source</th>
+                {(user?.roles === 'EMPLOYEE') && <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Phone</th>}
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Assigned To</th>
               </tr>
             </thead>
@@ -224,6 +225,9 @@ const LeadsPage = () => {
                     <div className="text-sm text-slate-500">{lead.leadSubSource}</div>
                     {/* <div className="text-xs text-slate-400">{lead.leadSubSource}</div> */}
                   </td>
+                  {(user?.roles === 'EMPLOYEE') && <td className="px-6 py-4">
+                    <div className="text-sm font-semibold text-slate-900">{lead.phone}</div>
+                  </td>}
                   <td className="px-6 py-4 whitespace-nowrap">
                     {user?.roles === 'ADMIN' || user?.roles === 'SUPERUSER' ? (
                       <button
