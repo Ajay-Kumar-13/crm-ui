@@ -1,5 +1,5 @@
 export const fetchRoles = async (accessToken) => {
-    const res = await fetch(`${import.meta.env.VITE_CRM_USERS_API_ENDPOINT}/api/admin/roles`, {
+    const res = await fetch(`${import.meta.env.VITE_CRM_USERS_API_ENDPOINT}/api/user/admin/roles`, {
         headers: {
             'Authorization': `Bearer ${accessToken}`
         }
@@ -11,7 +11,7 @@ export const fetchRoles = async (accessToken) => {
 };
 
 export const saveRole = async ({accessToken, roleData}) => {
-    const res = await fetch(`${import.meta.env.VITE_CRM_USERS_API_ENDPOINT}/api/admin/roles`, {
+    const res = await fetch(`${import.meta.env.VITE_CRM_USERS_API_ENDPOINT}/api/user/admin/roles`, {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${accessToken}`,
