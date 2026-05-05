@@ -41,15 +41,17 @@ export const AppProvider = ({ children }) => {
 
         if (isTokenExpired(storedToken)) {
           try {
-            const data = await refreshAccessToken();
-            const newToken = data.accessToken;
+            if(storedToken) {
+              const data = await refreshAccessToken();
+              const newToken = data.accessToken;
 
-            localStorage.setItem("access_token", newToken);
+              localStorage.setItem("access_token", newToken);
 
-            const userFromToken = jwtDecode(newToken);
+              const userFromToken = jwtDecode(newToken);
 
-            setAccessToken(newToken);
-            setUser(userFromToken);
+              setAccessToken(newToken);
+              setUser(userFromToken);
+            }
           } catch (error) {
             // refresh token expired
             localStorage.removeItem("access_token");

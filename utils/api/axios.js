@@ -5,7 +5,7 @@ import { refreshAccessToken } from "../system-utils";
 
 // Create an Axios instance with the base URL from environment variables
 const api = axios.create({
-    baseURL: `${import.meta.env.VITE_CRM_USERS_API_ENDPOINT}/api`
+    baseURL: `${import.meta.env.VITE_CRM_USERS_API_ENDPOINT}/api/user`
 })
 
 // Add a request interceptor to include the access token in the headers
