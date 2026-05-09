@@ -23,18 +23,18 @@ if (`${import.meta.env.VITE_PROFILE_ACTIVE}`.match('local')) {
     routes(){
       this.urlPrefix="http://localhost:8080"
       this.namespace="api";
-      this.get("/admin/users", users);
-      this.post("/auth/login", accessToken);
-      this.post("/auth/refresh", refreshToken);
-      this.post("/admin/users", {})
-      this.get("/admin/authorities", authorities);
-      this.get("/admin/roles", roles);
-      this.get("/admin/authorities/:roleId", roleAuthorities);
-      this.post("/admin/authorities", {});
-      this.post("/admin/roles", {});
-      this.put("/admin/users/:userId", updatedUser);
-      this.get("/admin/leads", leads);
-      this.post("/admin/leads", {});
+      this.get("/user/admin/users", users);
+      this.post("/user/auth/login", accessToken);
+      this.post("/user/auth/refresh", refreshToken);
+      this.post("/user/admin/users", {})
+      this.get("/user/admin/authorities", authorities);
+      this.get("/user/admin/roles", roles);
+      this.get("/user/admin/authorities/:roleId", roleAuthorities);
+      this.post("/user/admin/authorities", {});
+      this.post("/user/admin/roles", {});
+      this.put("/user/admin/users/:userId", updatedUser);
+      this.get("/handle-leads/admin/leads", leads);
+      this.post("/handle-leads/admin/leads", {});
     }
   })
 }
