@@ -48,7 +48,7 @@ const UsersPage = () => {
       setRoleAuthorities(roleAuths);
     }
     fetchDefaultRoleAuthorities();
-  }, []);
+  }, [roles]);
 
   const showToast = (message, submessage, type = 'info') => {
     setToastMessage(message);
