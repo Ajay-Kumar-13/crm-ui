@@ -39,3 +39,16 @@ export const updateRole = async ({roleId, roleData, accessToken}) => {
     }
     return res.json();
 }
+
+export const deleteRole = async ({roleId, accessToken}) => {
+    const res = await fetch(`${import.meta.env.VITE_CRM_USERS_API_ENDPOINT}/api/user/admin/roles/${roleId}`, {
+        method: 'DELETE',
+        headers: {
+            'Authorization': `Bearer ${accessToken}`
+        }
+    });
+    if (!res.ok) {
+        throw new Error('Failed to delete role');
+    }
+    return true;
+}
