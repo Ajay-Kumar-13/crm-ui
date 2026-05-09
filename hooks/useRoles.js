@@ -26,3 +26,13 @@ export const useSaveRole  = () => {
         }
     })
 }
+
+export const useUpdateRole = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({roleId, roleData, accessToken}) => updateRole({roleId, roleData, accessToken}),
+        onSuccess: (data) =>{
+            queryClient.invalidateQueries('roles');
+        }
+    })
+}

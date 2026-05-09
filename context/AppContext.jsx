@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { MOCK_USERS, MOCK_LEADS, MOCK_COMPANIES, MOCK_AUTHORITIES, MOCK_ROLES, MOCK_NOTIFICATIONS } from '../services/mockData';
 import { useUpdateUser, useUsers } from '../hooks/useUsers';
 import { useAuthorities, useSaveAuthority } from '../hooks/useAuthorities';
-import { useRoles, useSaveRole } from '../hooks/useRoles';
+import { useRoles, useSaveRole, useUpdateRole } from '../hooks/useRoles';
 import { useAssignLead, useLeads } from '../hooks/useLeads';
 import { fetchAccessToken, refreshAccessToken } from '../utils/system-utils';
 import { jwtDecode } from 'jwt-decode';
@@ -32,6 +32,7 @@ export const AppProvider = ({ children }) => {
   const createRole = useSaveRole();
   const createAuthority = useSaveAuthority();
   const updateExistingUser = useUpdateUser();
+  const updateExistingRole = useUpdateRole();
   const assignLead = useAssignLead();
 
   useEffect(() => {
@@ -149,6 +150,10 @@ export const AppProvider = ({ children }) => {
     const savedRole = createRole.mutate({roleData: role, accessToken: accessToken});
   };
 
+  const updateRole = (id, updates) => {
+    const updatedRole = updateExistingRole.mutate({roleId: id, roleData: updates, accessToken: accessToken});
+  };
+
   const sendNotification = (toUserId, message) => {
     if (!user) return;
     const newNotif = {
@@ -184,6 +189,7 @@ export const AppProvider = ({ children }) => {
         notifications,
         addUser,
         updateUser,
+        updateRole,
         addLead,
         updateLead,
         addAuthority,
