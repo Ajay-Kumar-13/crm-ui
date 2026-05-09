@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Card, Button, Input, Select, Badge, Checkbox, LoadingScreen, Toast } from '../components/ui';
-import { Edit2, Shield, UserPlus, Power, CheckCircle, XCircle, Users, Lock, ShieldCheck, Search, Eye, X } from 'lucide-react';
+import { Edit2, Shield, UserPlus, Power, CheckCircle, XCircle, Users, Lock, ShieldCheck, Search, Eye, X, Trash2 } from 'lucide-react';
 import { fetchRoleAuthorities } from '../utils/system-utils';
 
 const UsersPage = () => {
@@ -391,6 +391,7 @@ const UsersPage = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Role Name</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Description</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Default Authorities</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
@@ -400,7 +401,46 @@ const UsersPage = () => {
                         <Badge color="blue">{r.roleName}</Badge>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{r.roleDesc}</td>
-                      <td className="px-6 py-4 text-sm text-slate-500 max-w-md truncate">{roleAuthorities[r.roleId]?.map(a => a.name).join(', ') || '-'}</td>
+                      <td className="px-6 py-4 text-sm text-slate-500">
+                        <div className="flex flex-wrap gap-1 max-w-xs items-center">
+                          {roleAuthorities[r.roleId].slice(0, 2).map((auth) => (
+                            <span
+                              key={auth.id || auth.name}
+                              className="inline-block px-2 py-0.5 rounded text-[10px] bg-slate-100 border border-slate-200 text-slate-600"
+                            >
+                              {auth.name}
+                            </span>
+                          ))}
+                          {roleAuthorities[r.roleId].length > 2 && (
+                            <button
+                              onClick={() => setViewAuthUser({ authorities: roleAuthorities[r.roleId] })}
+                              className="inline-block px-2 py-0.5 rounded text-[10px] bg-blue-50 border border-blue-200 text-blue-600 hover:bg-blue-100 transition-colors"
+                            >
+                              +{roleAuthorities[r.roleId].length - 2} more
+                            </button>
+                          )}
+                          {roleAuthorities[r.roleId].length <= 2 && roleAuthorities[r.roleId].length > 0 && (
+                            <button
+                              onClick={() => setViewAuthUser({ authorities: roleAuthorities[r.roleId] })}
+                              className="text-slate-400 hover:text-blue-600 ml-1 p-1 rounded-full hover:bg-slate-100"
+                              title="View All"
+                            >
+                              <Eye className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button onClick={() => handleOpenUserModal(u)} className="text-blue-600 hover:text-blue-900 mr-4">
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => toggleUserStatus(u)}
+                          className={`text-red-600 hover:opacity-80`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -424,6 +464,7 @@ const UsersPage = () => {
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Authority Code</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Description</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
@@ -431,6 +472,17 @@ const UsersPage = () => {
                     <tr key={a.authorityId}>
                       <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-slate-700">{a.authorityName}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{a.authorityDesc}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button onClick={() => handleOpenUserModal(u)} className="text-blue-600 hover:text-blue-900 mr-4">
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => toggleUserStatus(u)}
+                          className={`text-red-600 hover:opacity-80`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -446,7 +498,9 @@ const UsersPage = () => {
             <div className="flex justify-between items-center mb-4 pb-4 border-b">
               <div>
                 <h2 className="text-xl font-bold text-slate-800">Assigned Authorities</h2>
-                <p className="text-sm text-slate-500">for @{viewAuthUser.username}</p>
+                {viewAuthUser.username && (
+                  <p className="text-sm text-slate-500">for @{viewAuthUser.username}</p>
+                )}
               </div>
               <button onClick={() => setViewAuthUser(null)} className="text-slate-400 hover:text-slate-700">
                 <X className="w-6 h-6" />
