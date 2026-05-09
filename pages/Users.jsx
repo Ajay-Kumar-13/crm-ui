@@ -5,7 +5,7 @@ import { Edit2, Shield, UserPlus, Power, CheckCircle, XCircle, Users, Lock, Shie
 import { fetchRoleAuthorities } from '../utils/system-utils';
 
 const UsersPage = () => {
-  const { users, addUser, updateUser, authorities, roles, addRole, addAuthority, user: currentUser, loading, accessToken } = useApp();
+  const { users, addUser, updateUser, updateRole, authorities, roles, addRole, addAuthority, user: currentUser, loading, accessToken } = useApp();
   const [activeTab, setActiveTab] = useState('users');
 
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -14,6 +14,8 @@ const UsersPage = () => {
 
   const [viewAuthUser, setViewAuthUser] = useState(null);
   const [editingUser, setEditingUser] = useState(null);
+  const [editingRole, setEditingRole] = useState(null);
+  const [editingAuth, setEditingAuth] = useState(null);
   const [authoritiesPayload, setAuthoritiesPayload] = useState([]);
   const [authSearchTerm, setAuthSearchTerm] = useState('');
 
@@ -90,6 +92,21 @@ const UsersPage = () => {
     setIsUserModalOpen(true);
   };
 
+  const handleOpenRoleModal = (role) => {
+    if (role) {
+      setEditingRole(role);
+      setRoleForm({
+        name: role.roleName || '',
+        description: role.roleDesc || '',
+        authorities: roleAuthorities[role.roleId] || [],
+      });
+    } else {
+      setEditingRole(null);
+      setRoleForm({ name: '', description: '', authorities: [] });
+    }
+    setIsRoleModalOpen(true);
+  };
+
   const handleSaveUser = (e) => {
     e.preventDefault();
     if (editingUser) {
@@ -155,15 +172,27 @@ const UsersPage = () => {
 
   const handleSaveRole = (e) => {
     e.preventDefault();
-    if (roleForm.name) {
-      addRole({
+    if(editingRole) {
+      const payload = {
         roleName: roleForm.name.toUpperCase().replace(/\s+/g, '_'),
         roleDesc: roleForm.description || '',
         authorities: roleForm.authorities || [],
-      });
-      setRoleForm({ name: '', description: '', authorities: [] });
-      setIsRoleModalOpen(false);
-      showToast('Role created successfully', '', 'success');
+      };
+      console.log(payload);
+      
+      updateRole(editingRole.roleId, payload);
+      showToast('Role updated successfully', '', 'success');
+    } else {
+      if (roleForm.name) {
+        addRole({
+          roleName: roleForm.name.toUpperCase().replace(/\s+/g, '_'),
+          roleDesc: roleForm.description || '',
+          authorities: roleForm.authorities || [],
+        });
+        setRoleForm({ name: '', description: '', authorities: [] });
+        setIsRoleModalOpen(false);
+        showToast('Role created successfully', '', 'success');
+      }
     }
   };
 
@@ -431,7 +460,7 @@ const UsersPage = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button onClick={() => handleOpenUserModal(u)} className="text-blue-600 hover:text-blue-900 mr-4">
+                        <button onClick={() => handleOpenRoleModal(r)} className="text-blue-600 hover:text-blue-900 mr-4">
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button
@@ -622,7 +651,7 @@ const UsersPage = () => {
           <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-2xl max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold mb-4 text-slate-800 flex items-center">
               <Shield className="w-5 h-5 mr-2 text-blue-600" />
-              Create New Role
+              {editingRole ? 'Edit Role' : 'Create New Role'}
             </h2>
             <form onSubmit={handleSaveRole}>
               <Input
@@ -646,7 +675,7 @@ const UsersPage = () => {
                     <Checkbox
                       key={auth.authorityId}
                       label={auth.authorityName}
-                      checked={roleForm.authorities?.includes(auth.authorityId)}
+                      checked={roleForm.authorities?.some((a) => a.id === auth.authorityId)}
                       onChange={() => handleRoleAuthChange(auth.authorityId)}
                       title={auth.authorityDesc}
                     />
@@ -658,7 +687,9 @@ const UsersPage = () => {
                 <Button type="button" variant="outline" onClick={() => setIsRoleModalOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit">Create Role</Button>
+                <Button type="submit">
+                  {editingRole ? 'Update Role' : 'Create Role'}
+                </Button>
               </div>
             </form>
           </div>
