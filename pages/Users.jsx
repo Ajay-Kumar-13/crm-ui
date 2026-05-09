@@ -5,7 +5,7 @@ import { Edit2, Shield, UserPlus, Power, CheckCircle, XCircle, Users, Lock, Shie
 import { fetchRoleAuthorities } from '../utils/system-utils';
 
 const UsersPage = () => {
-  const { users, addUser, updateUser, updateRole, authorities, roles, addRole, addAuthority, user: currentUser, loading, accessToken } = useApp();
+  const { users, addUser, updateUser, updateRole, deleteRole, authorities, roles, addRole, addAuthority, user: currentUser, loading, accessToken } = useApp();
   const [activeTab, setActiveTab] = useState('users');
 
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -98,7 +98,7 @@ const UsersPage = () => {
       setRoleForm({
         name: role.roleName || '',
         description: role.roleDesc || '',
-        authorities: roleAuthorities[role.roleId] || [],
+        authorities: roleAuthorities[role.roleId]?.map((a) => a.id) || [],
       });
     } else {
       setEditingRole(null);
@@ -161,14 +161,20 @@ const UsersPage = () => {
     }
   };
 
-  const handleRoleAuthChange = (authName) => {
+  const handleRoleAuthChange = (authId) => {
     const current = roleForm.authorities || [];
-    if (current.includes(authName)) {
-      setRoleForm({ ...roleForm, authorities: current.filter((a) => a !== authName) });
+    if (current.includes(authId)) {
+      setRoleForm({ ...roleForm, authorities: current.filter((a) => a !== authId) });
     } else {
-      setRoleForm({ ...roleForm, authorities: [...current, authName] });
+      setRoleForm({ ...roleForm, authorities: [...current, authId] });
     }
   };
+
+  const closeRoleModal = () => {
+    setIsRoleModalOpen(false);
+    setEditingRole(null);
+    setRoleForm({ name: '', description: '', authorities: [] });
+  }
 
   const handleSaveRole = (e) => {
     e.preventDefault();
@@ -464,7 +470,7 @@ const UsersPage = () => {
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => toggleUserStatus(u)}
+                          onClick={() => deleteRole(r.roleId)}
                           className={`text-red-600 hover:opacity-80`}
                         >
                           <Trash2 className="w-4 h-4" />
@@ -669,13 +675,13 @@ const UsersPage = () => {
               />
 
               <div className="mb-4">
-                <label className="block text-sm font-medium text-slate-700 mb-2">Existing Authorities</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">{editingRole ? 'Existing Authorities' : 'Select Authorities'}</label>
                 <div className="max-h-60 overflow-y-auto border border-slate-300 p-3 rounded-md bg-slate-50 grid grid-cols-1 md:grid-cols-2 gap-2">
                   {authorities.map((auth) => (
                     <Checkbox
                       key={auth.authorityId}
                       label={auth.authorityName}
-                      checked={roleForm.authorities?.some((a) => a.id === auth.authorityId)}
+                      checked={roleForm.authorities?.includes(auth.authorityId)}
                       onChange={() => handleRoleAuthChange(auth.authorityId)}
                       title={auth.authorityDesc}
                     />
@@ -684,7 +690,7 @@ const UsersPage = () => {
               </div>
 
               <div className="flex justify-end space-x-2 mt-6 pt-4 border-t border-slate-100">
-                <Button type="button" variant="outline" onClick={() => setIsRoleModalOpen(false)}>
+                <Button type="button" variant="outline" onClick={() => closeRoleModal()}>
                   Cancel
                 </Button>
                 <Button type="submit">

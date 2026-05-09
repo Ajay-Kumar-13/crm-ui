@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchRoles } from "../services/roles";
-import { saveRole } from "../services/roles";
+import { saveRole, updateRole, deleteRole } from "../services/roles";
 
 export const useRoles = (accessToken) => {
     const query = useQuery({
@@ -30,9 +30,19 @@ export const useSaveRole  = () => {
 export const useUpdateRole = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({roleId, roleData, accessToken}) => updateRole({roleId, roleData, accessToken}),
-        onSuccess: (data) =>{
-            queryClient.invalidateQueries('roles');
+        mutationFn: async ({roleId, roleData, accessToken}) => await updateRole({roleId, roleData, accessToken}),
+        onSuccess: (data) => {
+            queryClient.invalidateQueries(['roles']);
+        }
+    })
+}
+
+export const useDeleteRole = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({roleId, accessToken}) => await deleteRole({roleId, accessToken}),
+        onSuccess: (data) => {
+            queryClient.invalidateQueries(['roles']);
         }
     })
 }
