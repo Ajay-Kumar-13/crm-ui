@@ -5,7 +5,7 @@ export const fetchLeads = async () => {
     return res.data;
 }
 
-export const uploadLeads = async (leadsData) => {
+export const uploadLeads = async ({leadsData}) => {
     const res = await api.post(`${import.meta.env.VITE_CRM_LEADS_API_ENDPOINT}/api/handle-leads/admin/leads`, leadsData);
     return res.data;
 }
