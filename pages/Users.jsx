@@ -438,7 +438,7 @@ const UsersPage = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{r.roleDesc}</td>
                       <td className="px-6 py-4 text-sm text-slate-500">
                         <div className="flex flex-wrap gap-1 max-w-xs items-center">
-                          {roleAuthorities[r.roleId].slice(0, 2).map((auth) => (
+                          {roleAuthorities[r.roleId]?.slice(0, 2).map((auth) => (
                             <span
                               key={auth.id || auth.name}
                               className="inline-block px-2 py-0.5 rounded text-[10px] bg-slate-100 border border-slate-200 text-slate-600"
@@ -446,15 +446,15 @@ const UsersPage = () => {
                               {auth.name}
                             </span>
                           ))}
-                          {roleAuthorities[r.roleId].length > 2 && (
+                          {roleAuthorities[r.roleId]?.length > 2 && (
                             <button
                               onClick={() => setViewAuthUser({ authorities: roleAuthorities[r.roleId] })}
                               className="inline-block px-2 py-0.5 rounded text-[10px] bg-blue-50 border border-blue-200 text-blue-600 hover:bg-blue-100 transition-colors"
                             >
-                              +{roleAuthorities[r.roleId].length - 2} more
+                              +{roleAuthorities[r.roleId]?.length - 2} more
                             </button>
                           )}
-                          {roleAuthorities[r.roleId].length <= 2 && roleAuthorities[r.roleId].length > 0 && (
+                          {roleAuthorities[r.roleId]?.length <= 2 && roleAuthorities[r.roleId]?.length > 0 && (
                             <button
                               onClick={() => setViewAuthUser({ authorities: roleAuthorities[r.roleId] })}
                               className="text-slate-400 hover:text-blue-600 ml-1 p-1 rounded-full hover:bg-slate-100"
