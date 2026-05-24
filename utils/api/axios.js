@@ -46,7 +46,7 @@ api.interceptors.response.use((response) => response, async(error) => {
     
     try {
         const res = await refreshAccessToken();
-        const newToken = res.data.accessToken;
+        const newToken = res.accessToken;
         localStorage.setItem('access_token', newToken);
         
         // Update the original request with the new token
