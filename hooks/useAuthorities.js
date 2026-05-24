@@ -4,7 +4,7 @@ import { fetchAuthorities, saveAuthority } from "../services/authorities";
 export const useAuthorities = (accessToken) => {
     const query = useQuery({
         queryKey: ['authorities'],
-        queryFn: () => fetchAuthorities(accessToken),
+        queryFn: () => fetchAuthorities(),
         staleTime: 1000 * 60 * 30,
         enabled: !!accessToken
     })
@@ -19,7 +19,7 @@ export const useAuthorities = (accessToken) => {
 export const useSaveAuthority = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async ({ accessToken, authority }) => saveAuthority({ accessToken, authority }),
+        mutationFn: async ({ authority }) => saveAuthority({ authority }),
         onSuccess: (data => {
             queryClient.invalidateQueries(['authorities']);
         })

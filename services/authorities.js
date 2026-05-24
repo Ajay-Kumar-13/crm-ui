@@ -1,26 +1,11 @@
-export const fetchAuthorities = async (accessToken) => {
-    const res = await fetch(`${import.meta.env.VITE_CRM_USERS_API_ENDPOINT}/api/user/admin/authorities`, {
-        headers: {
-            'Authorization': `Bearer ${accessToken}`
-        }
-    });
-    if (!res.ok) {
-        throw new Error('Failed to fetch authorities');
-    }
-    return res.json();
+import api from "../utils/api/axios";
+
+export const fetchAuthorities = async () => {
+    const res = await api.get(`${import.meta.env.VITE_CRM_USERS_API_ENDPOINT}/api/user/admin/authorities`)
+    return res.data;
 }
 
-export const saveAuthority = async ({ accessToken, authority }) => {
-    const res = await fetch(`${import.meta.env.VITE_CRM_USERS_API_ENDPOINT}/api/user/admin/authorities`, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(authority)
-    });
-    if (!res.ok) {
-        throw new Error('Failed to save authority');
-    }
-    return res.json();
+export const saveAuthority = async ({ authority }) => {
+    const res = await api.post(`${import.meta.env.VITE_CRM_USERS_API_ENDPOINT}/api/user/admin/authorities`, authority);
+    return res.data;
 }
