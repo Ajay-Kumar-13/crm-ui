@@ -117,7 +117,6 @@ const UsersPage = () => {
         authorities: authoritiesPayload,
         accountActive: userForm.accountActive,
       };
-      console.log(payload);
       
       updateUser(editingUser.id, payload);
       showToast('User updated successfully', '', 'success');
@@ -184,7 +183,6 @@ const UsersPage = () => {
         roleDesc: roleForm.description || '',
         authorities: roleForm.authorities || [],
       };
-      console.log(payload);
       
       updateRole(editingRole.roleId, payload);
       showToast('Role updated successfully', '', 'success');
