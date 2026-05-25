@@ -1,11 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchRoles } from "../services/roles";
-import { saveRole } from "../services/roles";
+import { saveRole, updateRole, deleteRole } from "../services/roles";
 
 export const useRoles = (accessToken) => {
     const query = useQuery({
         queryKey: ['roles'],
-        queryFn: () => fetchRoles(accessToken),
+        queryFn: () => fetchRoles(),
         staleTime: 1000 * 60 * 30,
         enabled: !!accessToken
     });
@@ -20,7 +20,27 @@ export const useRoles = (accessToken) => {
 export const useSaveRole  = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async ({ accessToken, roleData }) => await saveRole({ accessToken, roleData }),
+        mutationFn: async ({ roleData }) => await saveRole({ roleData }),
+        onSuccess: (data) => {
+            queryClient.invalidateQueries(['roles']);
+        }
+    })
+}
+
+export const useUpdateRole = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({roleId, roleData}) => await updateRole({roleId, roleData}),
+        onSuccess: (data) => {
+            queryClient.invalidateQueries(['roles']);
+        }
+    })
+}
+
+export const useDeleteRole = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({roleId}) => await deleteRole({roleId}),
         onSuccess: (data) => {
             queryClient.invalidateQueries(['roles']);
         }

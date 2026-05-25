@@ -116,7 +116,7 @@ const LeadsPage = () => {
         <h1 className="text-2xl font-bold text-slate-800">
           {user?.role?.name === 'EMPLOYEE' ? 'My Leads' : 'All Leads'}
         </h1>
-        {(user?.roles === 'ADMIN' || user?.roles === 'SUPERUSER') && (
+        {(user?.roles === 'ADMIN' || user?.roles === 'ROOT') && (
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex space-x-2 bg-slate-200 p-1 rounded-lg">
               <button
@@ -162,7 +162,7 @@ const LeadsPage = () => {
               <option value="LOST">Lost</option>
             </select>
           </div>
-          {(user?.roles === 'ADMIN' || user?.roles === 'SUPERUSER') && (
+          {(user?.roles === 'ADMIN' || user?.roles === 'ROOT') && (
             <div>
               <input type='file' ref={fileInputRef} accept='.xlsx,.xls' style={{display: 'none'}} onChange={handleFileChange}/>
               <Button variant="outline" onClick={handleImport} className='flex items-center'>

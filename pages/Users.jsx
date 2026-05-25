@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Card, Button, Input, Select, Badge, Checkbox, LoadingScreen, Toast } from '../components/ui';
-import { Edit2, Shield, UserPlus, Power, CheckCircle, XCircle, Users, Lock, ShieldCheck, Search, Eye, X } from 'lucide-react';
+import { Edit2, Shield, UserPlus, Power, CheckCircle, XCircle, Users, Lock, ShieldCheck, Search, Eye, X, Trash2 } from 'lucide-react';
 import { fetchRoleAuthorities } from '../utils/system-utils';
 
 const UsersPage = () => {
-  const { users, addUser, updateUser, authorities, roles, addRole, addAuthority, user: currentUser, loading, accessToken } = useApp();
+  const { users, addUser, updateUser, updateRole, deleteRole, authorities, roles, addRole, addAuthority, user: currentUser, loading, accessToken } = useApp();
   const [activeTab, setActiveTab] = useState('users');
 
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -14,6 +14,8 @@ const UsersPage = () => {
 
   const [viewAuthUser, setViewAuthUser] = useState(null);
   const [editingUser, setEditingUser] = useState(null);
+  const [editingRole, setEditingRole] = useState(null);
+  const [editingAuth, setEditingAuth] = useState(null);
   const [authoritiesPayload, setAuthoritiesPayload] = useState([]);
   const [authSearchTerm, setAuthSearchTerm] = useState('');
 
@@ -48,7 +50,7 @@ const UsersPage = () => {
       setRoleAuthorities(roleAuths);
     }
     fetchDefaultRoleAuthorities();
-  }, []);
+  }, [roles]);
 
   const showToast = (message, submessage, type = 'info') => {
     setToastMessage(message);
@@ -90,6 +92,21 @@ const UsersPage = () => {
     setIsUserModalOpen(true);
   };
 
+  const handleOpenRoleModal = (role) => {
+    if (role) {
+      setEditingRole(role);
+      setRoleForm({
+        name: role.roleName || '',
+        description: role.roleDesc || '',
+        authorities: roleAuthorities[role.roleId]?.map((a) => a.id) || [],
+      });
+    } else {
+      setEditingRole(null);
+      setRoleForm({ name: '', description: '', authorities: [] });
+    }
+    setIsRoleModalOpen(true);
+  };
+
   const handleSaveUser = (e) => {
     e.preventDefault();
     if (editingUser) {
@@ -100,7 +117,6 @@ const UsersPage = () => {
         authorities: authoritiesPayload,
         accountActive: userForm.accountActive,
       };
-      console.log(payload);
       
       updateUser(editingUser.id, payload);
       showToast('User updated successfully', '', 'success');
@@ -144,26 +160,43 @@ const UsersPage = () => {
     }
   };
 
-  const handleRoleAuthChange = (authName) => {
+  const handleRoleAuthChange = (authId) => {
     const current = roleForm.authorities || [];
-    if (current.includes(authName)) {
-      setRoleForm({ ...roleForm, authorities: current.filter((a) => a !== authName) });
+    if (current.includes(authId)) {
+      setRoleForm({ ...roleForm, authorities: current.filter((a) => a !== authId) });
     } else {
-      setRoleForm({ ...roleForm, authorities: [...current, authName] });
+      setRoleForm({ ...roleForm, authorities: [...current, authId] });
     }
   };
 
+  const closeRoleModal = () => {
+    setIsRoleModalOpen(false);
+    setEditingRole(null);
+    setRoleForm({ name: '', description: '', authorities: [] });
+  }
+
   const handleSaveRole = (e) => {
     e.preventDefault();
-    if (roleForm.name) {
-      addRole({
+    if(editingRole) {
+      const payload = {
         roleName: roleForm.name.toUpperCase().replace(/\s+/g, '_'),
         roleDesc: roleForm.description || '',
         authorities: roleForm.authorities || [],
-      });
-      setRoleForm({ name: '', description: '', authorities: [] });
-      setIsRoleModalOpen(false);
-      showToast('Role created successfully', '', 'success');
+      };
+      
+      updateRole(editingRole.roleId, payload);
+      showToast('Role updated successfully', '', 'success');
+    } else {
+      if (roleForm.name) {
+        addRole({
+          roleName: roleForm.name.toUpperCase().replace(/\s+/g, '_'),
+          roleDesc: roleForm.description || '',
+          authorities: roleForm.authorities || [],
+        });
+        setRoleForm({ name: '', description: '', authorities: [] });
+        setIsRoleModalOpen(false);
+        showToast('Role created successfully', '', 'success');
+      }
     }
   };
 
@@ -391,6 +424,7 @@ const UsersPage = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Role Name</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Description</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Default Authorities</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
@@ -400,7 +434,46 @@ const UsersPage = () => {
                         <Badge color="blue">{r.roleName}</Badge>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{r.roleDesc}</td>
-                      <td className="px-6 py-4 text-sm text-slate-500 max-w-md truncate">{roleAuthorities[r.roleId]?.map(a => a.name).join(', ') || '-'}</td>
+                      <td className="px-6 py-4 text-sm text-slate-500">
+                        <div className="flex flex-wrap gap-1 max-w-xs items-center">
+                          {roleAuthorities[r.roleId]?.slice(0, 2).map((auth) => (
+                            <span
+                              key={auth.id || auth.name}
+                              className="inline-block px-2 py-0.5 rounded text-[10px] bg-slate-100 border border-slate-200 text-slate-600"
+                            >
+                              {auth.name}
+                            </span>
+                          ))}
+                          {roleAuthorities[r.roleId]?.length > 2 && (
+                            <button
+                              onClick={() => setViewAuthUser({ authorities: roleAuthorities[r.roleId] })}
+                              className="inline-block px-2 py-0.5 rounded text-[10px] bg-blue-50 border border-blue-200 text-blue-600 hover:bg-blue-100 transition-colors"
+                            >
+                              +{roleAuthorities[r.roleId]?.length - 2} more
+                            </button>
+                          )}
+                          {roleAuthorities[r.roleId]?.length <= 2 && roleAuthorities[r.roleId]?.length > 0 && (
+                            <button
+                              onClick={() => setViewAuthUser({ authorities: roleAuthorities[r.roleId] })}
+                              className="text-slate-400 hover:text-blue-600 ml-1 p-1 rounded-full hover:bg-slate-100"
+                              title="View All"
+                            >
+                              <Eye className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button onClick={() => handleOpenRoleModal(r)} className="text-blue-600 hover:text-blue-900 mr-4">
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => deleteRole(r.roleId)}
+                          className={`text-red-600 hover:opacity-80`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -424,6 +497,7 @@ const UsersPage = () => {
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Authority Code</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Description</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
@@ -431,6 +505,17 @@ const UsersPage = () => {
                     <tr key={a.authorityId}>
                       <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-slate-700">{a.authorityName}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{a.authorityDesc}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button onClick={() => handleOpenUserModal(u)} className="text-blue-600 hover:text-blue-900 mr-4">
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => toggleUserStatus(u)}
+                          className={`text-red-600 hover:opacity-80`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -446,7 +531,9 @@ const UsersPage = () => {
             <div className="flex justify-between items-center mb-4 pb-4 border-b">
               <div>
                 <h2 className="text-xl font-bold text-slate-800">Assigned Authorities</h2>
-                <p className="text-sm text-slate-500">for @{viewAuthUser.username}</p>
+                {viewAuthUser.username && (
+                  <p className="text-sm text-slate-500">for @{viewAuthUser.username}</p>
+                )}
               </div>
               <button onClick={() => setViewAuthUser(null)} className="text-slate-400 hover:text-slate-700">
                 <X className="w-6 h-6" />
@@ -568,7 +655,7 @@ const UsersPage = () => {
           <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-2xl max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold mb-4 text-slate-800 flex items-center">
               <Shield className="w-5 h-5 mr-2 text-blue-600" />
-              Create New Role
+              {editingRole ? 'Edit Role' : 'Create New Role'}
             </h2>
             <form onSubmit={handleSaveRole}>
               <Input
@@ -586,7 +673,7 @@ const UsersPage = () => {
               />
 
               <div className="mb-4">
-                <label className="block text-sm font-medium text-slate-700 mb-2">Existing Authorities</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">{editingRole ? 'Existing Authorities' : 'Select Authorities'}</label>
                 <div className="max-h-60 overflow-y-auto border border-slate-300 p-3 rounded-md bg-slate-50 grid grid-cols-1 md:grid-cols-2 gap-2">
                   {authorities.map((auth) => (
                     <Checkbox
@@ -601,10 +688,12 @@ const UsersPage = () => {
               </div>
 
               <div className="flex justify-end space-x-2 mt-6 pt-4 border-t border-slate-100">
-                <Button type="button" variant="outline" onClick={() => setIsRoleModalOpen(false)}>
+                <Button type="button" variant="outline" onClick={() => closeRoleModal()}>
                   Cancel
                 </Button>
-                <Button type="submit">Create Role</Button>
+                <Button type="submit">
+                  {editingRole ? 'Update Role' : 'Create Role'}
+                </Button>
               </div>
             </form>
           </div>

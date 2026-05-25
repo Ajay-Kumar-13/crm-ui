@@ -1,6 +1,6 @@
 export const authorities = [
     {
-        "authorityId": "a6b9870b-9c80-4686-9f25-1fe27afe2760",
+        "authorityId": "d5b23130-2502-44d1-8b66-581e25e1d521",
         "authorityName": "CREATE",
         "authorityDesc": "Allows the user to create new records in the system."
     },
