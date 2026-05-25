@@ -152,7 +152,7 @@ export const AppProvider = ({ children }) => {
   };
 
   const updateRole = (id, updates) => {
-    const updatedRole = updateExistingRole.mutate({roleId: id, roleData: updates, accessToken: accessToken});
+    const updatedRole = updateExistingRole.mutate({roleId: id, roleData: updates});
   };
 
   const deleteRole = (id) => {
