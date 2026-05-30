@@ -4,6 +4,7 @@ import { Card, Button, Badge } from '../components/ui';
 import { FileSpreadsheet, Search, UserCheck, X } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useUploadLeads } from '../hooks/useLeads';
+import { Edit2, Trash2 } from 'lucide-react';
 
 const LeadsPage = () => {
   const { leads, users, updateLead, addLead, user } = useApp();
@@ -12,7 +13,11 @@ const LeadsPage = () => {
 
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
   const [selectedLeadId, setSelectedLeadId] = useState(null);
+  const [editingLead, setEditingLead] = useState(null);
   const [userSearchTerm, setUserSearchTerm] = useState('');
+  const [lead, setLead] = useState({
+    leadState: '',
+  });
   const [activeTab, setActiveTab] = useState('assigned');
 
   const fileInputRef = useRef();
@@ -181,6 +186,7 @@ const LeadsPage = () => {
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Source</th>
                 {(user?.roles === 'EMPLOYEE') && <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Phone</th>}
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Assigned To</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-slate-200">
@@ -193,7 +199,7 @@ const LeadsPage = () => {
                   </td>
                   {/* <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-700">${lead.value.toLocaleString()}</td> */}
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {user?.roles === 'EMPLOYEE' ? (
+                    {editingLead ? (
                       <div className="relative">
                         <select
                           value={lead.leadState}
@@ -247,6 +253,16 @@ const LeadsPage = () => {
                         </span>
                       </div>
                     )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <button className="text-blue-600 hover:text-blue-900 mr-4">
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      className={`text-red-600 hover:opacity-80`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </td>
                 </tr>
               ))}
