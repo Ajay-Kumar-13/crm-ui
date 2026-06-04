@@ -4,7 +4,7 @@ import { Card, Button, Badge } from '../components/ui';
 import { FileSpreadsheet, Search, UserCheck, X } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useUploadLeads } from '../hooks/useLeads';
-import { Edit2, Trash2 } from 'lucide-react';
+import { Edit2, Trash2, CircleX, CircleCheck } from 'lucide-react';
 
 const LeadsPage = () => {
   const { leads, users, updateLead, addLead, user } = useApp();
@@ -15,9 +15,6 @@ const LeadsPage = () => {
   const [selectedLeadId, setSelectedLeadId] = useState(null);
   const [editingLead, setEditingLead] = useState(null);
   const [userSearchTerm, setUserSearchTerm] = useState('');
-  const [lead, setLead] = useState({
-    leadState: '',
-  });
   const [activeTab, setActiveTab] = useState('assigned');
 
   const fileInputRef = useRef();
@@ -115,6 +112,21 @@ const LeadsPage = () => {
         (u.email || '').toLowerCase().includes(userSearchTerm.toLowerCase()))
   );
 
+  const handleEditLead = (lead) => {
+    if (lead === null) {
+      setEditingLead(null);
+      return;
+    } else {
+      setEditingLead({
+        id: lead.id,
+        name: lead.name,
+        email: lead.email,
+        phone: lead.phone,
+        leadState: lead.leadState,
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
@@ -199,11 +211,11 @@ const LeadsPage = () => {
                   </td>
                   {/* <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-700">${lead.value.toLocaleString()}</td> */}
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {editingLead ? (
+                    {editingLead?.id === lead.id ? (
                       <div className="relative">
                         <select
-                          value={lead.leadState}
-                          onChange={(e) => updateLead(lead.id, { status: e.target.value })}
+                          value={editingLead ? editingLead.leadState : lead.leadState}
+                          onChange={(e) => setEditingLead({ ...editingLead, leadState: e.target.value })}
                           className="text-xs border-slate-200 bg-white shadow-sm rounded-full py-1 pl-2 pr-6 focus:ring-blue-500 focus:border-blue-500 cursor-pointer appearance-none border"
                           style={{
                             color:
@@ -255,14 +267,20 @@ const LeadsPage = () => {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button className="text-blue-600 hover:text-blue-900 mr-4">
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      className={`text-red-600 hover:opacity-80`}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    {
+                      editingLead?.id === lead.id ? <button className="text-blue-600 hover:text-blue-900 mr-4" onClick={() => handleEditLead(null)}>
+                        <CircleX className="w-5 h-5" />
+                      </button> : <button className="text-blue-600 hover:text-blue-900 mr-4" onClick={() => handleEditLead(lead)}>
+                        <Edit2 className="w-5 h-5" />
+                      </button>
+                    }
+                    {
+                      editingLead?.id === lead.id ? <button className="text-blue-600 hover:text-blue-900 mr-4">
+                        <CircleCheck className="w-5 h-5" />
+                      </button> : <button className={`text-red-600 hover:opacity-80`}>
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    }
                   </td>
                 </tr>
               ))}
