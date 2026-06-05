@@ -23,15 +23,6 @@ const LeadsPage = () => {
 
   const handleImport = () => {
     fileInputRef.current.click();
-    // addLead({
-    //   id: `l-imp-${Date.now()}`,
-    //   companyName: 'Imported Co.',
-    //   contactName: 'John Import',
-    //   email: 'john@import.com',
-    //   value: 15000,
-    //   status: 'NEW',
-    //   createdAt: new Date().toISOString(),
-    // });
   };
 
   const handleFileChange = (e) => {
@@ -97,9 +88,9 @@ const LeadsPage = () => {
     setAssignmentModalOpen(true);
   };
 
-  const assignUser = (userId) => {  
+  const handleUpdateLead = () => {  
     if (selectedLeadId) {
-      updateLead(selectedLeadId, userId);
+      updateLead(selectedLeadId, editingLead);
       setAssignmentModalOpen(false);
     }
   };
@@ -123,9 +114,15 @@ const LeadsPage = () => {
         email: lead.email,
         phone: lead.phone,
         leadState: lead.leadState,
+        assignedTo: lead.assignedTo
       });
     }
   };
+
+  const handleLeadAssignment = (u) => {
+    setEditingLead({ ...editingLead, assignedTo: u.id });
+    setAssignmentModalOpen(false);
+  }
 
   return (
     <div className="space-y-6">
@@ -247,13 +244,13 @@ const LeadsPage = () => {
                     <div className="text-sm font-semibold text-slate-900">{lead.phone}</div>
                   </td>}
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {user?.roles === 'ADMIN' || user?.roles === 'SUPERUSER' ? (
+                    {editingLead?.id === lead.id && (user?.roles === 'ADMIN' || user?.roles === 'SUPERUSER') ? (
                       <button
                         onClick={() => openAssignmentModal(lead.id)}
                         className="flex items-center space-x-2 text-sm text-slate-700 hover:text-blue-600 px-3 py-1.5 rounded border border-transparent hover:border-blue-200 hover:bg-blue-50 transition-all"
                       >
                         <UserCheck className="w-4 h-4 text-slate-400" />
-                        <span>{users.find((u) => u.id === lead.assignedTo)?.username || 'Unassigned'}</span>
+                        <span>{users.find((u) => u.id === editingLead.assignedTo)?.username || 'Unassigned'}</span>
                       </button>
                     ) : (
                       <div className="flex items-center">
@@ -275,7 +272,7 @@ const LeadsPage = () => {
                       </button>
                     }
                     {
-                      editingLead?.id === lead.id ? <button className="text-blue-600 hover:text-blue-900 mr-4">
+                      editingLead?.id === lead.id ? <button className="text-blue-600 hover:text-blue-900 mr-4" onClick={() => handleUpdateLead()}>
                         <CircleCheck className="w-5 h-5" />
                       </button> : <button className={`text-red-600 hover:opacity-80`}>
                         <Trash2 className="w-5 h-5" />
@@ -323,7 +320,7 @@ const LeadsPage = () => {
                 availableUsers.map((u) => (
                   <button
                     key={u.id}
-                    onClick={() => assignUser(u.id)}
+                    onClick={() => handleLeadAssignment(u)}
                     className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0 flex items-center justify-between group"
                   >
                     <div className="flex items-center">

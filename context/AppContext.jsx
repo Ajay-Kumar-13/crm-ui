@@ -3,7 +3,7 @@ import { MOCK_USERS, MOCK_LEADS, MOCK_COMPANIES, MOCK_AUTHORITIES, MOCK_ROLES, M
 import { useUpdateUser, useUsers } from '../hooks/useUsers';
 import { useAuthorities, useSaveAuthority } from '../hooks/useAuthorities';
 import { useDeleteRole, useRoles, useSaveRole, useUpdateRole } from '../hooks/useRoles';
-import { useAssignLead, useLeads } from '../hooks/useLeads';
+import { useLeads, useUpdateLead } from '../hooks/useLeads';
 import { fetchAccessToken, refreshAccessToken } from '../utils/system-utils';
 import { jwtDecode } from 'jwt-decode';
 import {useSaveUser} from '../hooks/useUsers';
@@ -33,7 +33,7 @@ export const AppProvider = ({ children }) => {
   const createAuthority = useSaveAuthority();
   const updateExistingUser = useUpdateUser();
   const updateExistingRole = useUpdateRole();
-  const assignLead = useAssignLead();
+  const updateExistingLead = useUpdateLead();
   const deleteExistingRole = useDeleteRole();
 
   useEffect(() => {
@@ -138,9 +138,9 @@ export const AppProvider = ({ children }) => {
   };
 
   const addLead = (lead) => setLeads([...leads, lead]);
-  const updateLead = (id, userId) => {
-    assignLead.mutate({ leadId: id, userId: userId });
-    setLeads(leads.map((l) => (l.id === id ? { ...l, assignedTo: userId } : l)));
+
+  const updateLead = (id, leadData) => {
+    updateExistingLead.mutate({ leadId: id, leadData: leadData });
   };
 
   const addAuthority = (auth) => {
