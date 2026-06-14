@@ -17,6 +17,7 @@ const UsersPage = () => {
   const [editingRole, setEditingRole] = useState(null);
   const [editingAuth, setEditingAuth] = useState(null);
   const [authoritiesPayload, setAuthoritiesPayload] = useState([]);
+  const [updatedRoleAuthorities, setUpdatedRoleAuthorities] = useState([]);
   const [authSearchTerm, setAuthSearchTerm] = useState('');
 
   const [userSearch, setUserSearch] = useState('');
@@ -167,6 +168,13 @@ const UsersPage = () => {
     } else {
       setRoleForm({ ...roleForm, authorities: [...current, authId] });
     }
+
+    const existsInPayload = updatedRoleAuthorities.some((a) => a.authId === authId);
+    if(existsInPayload) {
+      setUpdatedRoleAuthorities(updatedRoleAuthorities.filter(a => a.authId !== authId));
+    } else {  
+      setUpdatedRoleAuthorities([...updatedRoleAuthorities, { "authId": authId, "active": !current.includes(authId) }]);
+    }
   };
 
   const closeRoleModal = () => {
@@ -181,7 +189,7 @@ const UsersPage = () => {
       const payload = {
         roleName: roleForm.name.toUpperCase().replace(/\s+/g, '_'),
         roleDesc: roleForm.description || '',
-        authorities: roleForm.authorities || [],
+        authorities: updatedRoleAuthorities,
       };
       
       updateRole(editingRole.roleId, payload);

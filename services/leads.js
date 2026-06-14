@@ -10,7 +10,7 @@ export const uploadLeads = async ({leadsData}) => {
     return res.data;
 }
 
-export const assignLead = async ({ leadId, userId }) => {
-    const res = await api.put(`${import.meta.env.VITE_CRM_LEADS_API_ENDPOINT}/api/handle-leads/admin/leads`, { assignedTo: userId, leadId: leadId });
+export const updateLead = async ({ leadId, leadData }) => {
+    const res = await api.put(`${import.meta.env.VITE_CRM_LEADS_API_ENDPOINT}/api/handle-leads/admin/leads/${leadId}`, leadData);
     return res.data;
 }

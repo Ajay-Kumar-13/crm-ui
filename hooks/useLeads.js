@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 
-import { fetchLeads, uploadLeads, assignLead } from "../services/leads";
+import { fetchLeads, uploadLeads, updateLead } from "../services/leads";
 
 export const useLeads = (accessToken) => {
     const query = useQuery({
@@ -27,10 +27,10 @@ export const useUploadLeads = () => {
     })
 }
 
-export const useAssignLead = () => {
+export const useUpdateLead = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async ({ leadId, userId }) => await assignLead({ leadId, userId }),
+        mutationFn: async ({ leadId, leadData }) => await updateLead({ leadId, leadData }),
         onSuccess: (data) => {
             queryClient.invalidateQueries(['leads']);
         }

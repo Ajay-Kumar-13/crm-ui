@@ -4,6 +4,7 @@ import { Card, Button, Badge } from '../components/ui';
 import { FileSpreadsheet, Search, UserCheck, X } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useUploadLeads } from '../hooks/useLeads';
+import { Edit2, Trash2, CircleX, CircleCheck } from 'lucide-react';
 
 const LeadsPage = () => {
   const { leads, users, updateLead, addLead, user } = useApp();
@@ -12,6 +13,7 @@ const LeadsPage = () => {
 
   const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
   const [selectedLeadId, setSelectedLeadId] = useState(null);
+  const [editingLead, setEditingLead] = useState(null);
   const [userSearchTerm, setUserSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('assigned');
 
@@ -21,15 +23,6 @@ const LeadsPage = () => {
 
   const handleImport = () => {
     fileInputRef.current.click();
-    // addLead({
-    //   id: `l-imp-${Date.now()}`,
-    //   companyName: 'Imported Co.',
-    //   contactName: 'John Import',
-    //   email: 'john@import.com',
-    //   value: 15000,
-    //   status: 'NEW',
-    //   createdAt: new Date().toISOString(),
-    // });
   };
 
   const handleFileChange = (e) => {
@@ -95,9 +88,9 @@ const LeadsPage = () => {
     setAssignmentModalOpen(true);
   };
 
-  const assignUser = (userId) => {  
+  const handleUpdateLead = () => {  
     if (selectedLeadId) {
-      updateLead(selectedLeadId, userId);
+      updateLead(selectedLeadId, editingLead);
       setAssignmentModalOpen(false);
     }
   };
@@ -109,6 +102,27 @@ const LeadsPage = () => {
       (u.username.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
         (u.email || '').toLowerCase().includes(userSearchTerm.toLowerCase()))
   );
+
+  const handleEditLead = (lead) => {
+    if (lead === null) {
+      setEditingLead(null);
+      return;
+    } else {
+      setEditingLead({
+        id: lead.id,
+        name: lead.name,
+        email: lead.email,
+        phone: lead.phone,
+        leadState: lead.leadState,
+        assignedTo: lead.assignedTo
+      });
+    }
+  };
+
+  const handleLeadAssignment = (u) => {
+    setEditingLead({ ...editingLead, assignedTo: u.id });
+    setAssignmentModalOpen(false);
+  }
 
   return (
     <div className="space-y-6">
@@ -181,6 +195,7 @@ const LeadsPage = () => {
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Source</th>
                 {(user?.roles === 'EMPLOYEE') && <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Phone</th>}
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Assigned To</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-slate-200">
@@ -193,11 +208,11 @@ const LeadsPage = () => {
                   </td>
                   {/* <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-700">${lead.value.toLocaleString()}</td> */}
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {user?.roles === 'EMPLOYEE' ? (
+                    {editingLead?.id === lead.id ? (
                       <div className="relative">
                         <select
-                          value={lead.leadState}
-                          onChange={(e) => updateLead(lead.id, { status: e.target.value })}
+                          value={editingLead ? editingLead.leadState : lead.leadState}
+                          onChange={(e) => setEditingLead({ ...editingLead, leadState: e.target.value })}
                           className="text-xs border-slate-200 bg-white shadow-sm rounded-full py-1 pl-2 pr-6 focus:ring-blue-500 focus:border-blue-500 cursor-pointer appearance-none border"
                           style={{
                             color:
@@ -229,13 +244,13 @@ const LeadsPage = () => {
                     <div className="text-sm font-semibold text-slate-900">{lead.phone}</div>
                   </td>}
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {user?.roles === 'ADMIN' || user?.roles === 'SUPERUSER' ? (
+                    {editingLead?.id === lead.id && (user?.roles === 'ADMIN' || user?.roles === 'SUPERUSER') ? (
                       <button
                         onClick={() => openAssignmentModal(lead.id)}
                         className="flex items-center space-x-2 text-sm text-slate-700 hover:text-blue-600 px-3 py-1.5 rounded border border-transparent hover:border-blue-200 hover:bg-blue-50 transition-all"
                       >
                         <UserCheck className="w-4 h-4 text-slate-400" />
-                        <span>{users.find((u) => u.id === lead.assignedTo)?.username || 'Unassigned'}</span>
+                        <span>{users.find((u) => u.id === editingLead.assignedTo)?.username || 'Unassigned'}</span>
                       </button>
                     ) : (
                       <div className="flex items-center">
@@ -247,6 +262,22 @@ const LeadsPage = () => {
                         </span>
                       </div>
                     )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    {
+                      editingLead?.id === lead.id ? <button className="text-blue-600 hover:text-blue-900 mr-4" onClick={() => handleEditLead(null)}>
+                        <CircleX className="w-5 h-5" />
+                      </button> : <button className="text-blue-600 hover:text-blue-900 mr-4" onClick={() => handleEditLead(lead)}>
+                        <Edit2 className="w-5 h-5" />
+                      </button>
+                    }
+                    {
+                      editingLead?.id === lead.id ? <button className="text-blue-600 hover:text-blue-900 mr-4" onClick={() => handleUpdateLead()}>
+                        <CircleCheck className="w-5 h-5" />
+                      </button> : <button className={`text-red-600 hover:opacity-80`}>
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    }
                   </td>
                 </tr>
               ))}
@@ -289,7 +320,7 @@ const LeadsPage = () => {
                 availableUsers.map((u) => (
                   <button
                     key={u.id}
-                    onClick={() => assignUser(u.id)}
+                    onClick={() => handleLeadAssignment(u)}
                     className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0 flex items-center justify-between group"
                   >
                     <div className="flex items-center">
