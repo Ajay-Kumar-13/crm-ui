@@ -3,18 +3,27 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Nexus CRM</title>
+    <title>thriveQ CRM</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap"
+      rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
         theme: {
           extend: {
+            fontFamily: {
+              sans: ['DM Sans', 'sans-serif'],
+            },
             colors: {
-              primary: '#2563eb', // Blue 600
+              primary: '#6fc935', // thriveQ brand green
+              'primary-dark': '#3a9010',
+              'primary-light': '#c5f135',
+              ink: '#111111', // near-black surfaces/text
               secondary: '#475569', // Slate 600
               success: '#16a34a', // Green 600
               danger: '#dc2626', // Red 600
-              warning: '#ca8a04', // Yellow 600
+              warning: '#b45309', // Amber 700
             }
           }
         }
@@ -34,7 +43,7 @@
 </script>
 <link rel="stylesheet" href="/index.css">
 </head>
-  <body class="bg-slate-50 text-slate-900 font-sans antialiased">
+  <body class="bg-[#fafafa] text-slate-900 font-sans antialiased">
     <div id="root"></div>
   <script type="module" src="/index.jsx"></script>
 </body>

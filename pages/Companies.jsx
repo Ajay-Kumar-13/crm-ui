@@ -1,10 +1,17 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Card, Button, Input, Select } from '../components/ui';
+import { Modal } from '../components/Modal';
+import { Pagination } from '../components/Pagination';
+import { EmptyState } from '../components/EmptyState';
+import { CardSkeleton } from '../components/Skeleton';
+import { useToast } from '../context/ToastContext';
+import { usePagination } from '../hooks/usePagination';
 import { Building2, Plus, User as UserIcon, MessageCircle, Search } from 'lucide-react';
 
 const CompaniesPage = () => {
-  const { companies, addCompany, users, sendNotification } = useApp();
+  const { companies, addCompany, users, sendNotification, loading } = useApp();
+  const toast = useToast();
   const [showForm, setShowForm] = useState(false);
   const [newCompany, setNewCompany] = useState({ name: '', industry: '', annualRevenue: 0, adminId: '' });
 
@@ -29,6 +36,7 @@ const CompaniesPage = () => {
       });
       setShowForm(false);
       setNewCompany({ name: '', industry: '', annualRevenue: 0, adminId: '' });
+      toast.success('Company created successfully');
     }
   };
 
@@ -43,7 +51,7 @@ const CompaniesPage = () => {
     if (selectedAdminId && messageText) {
       sendNotification(selectedAdminId, messageText);
       setMessageModalOpen(false);
-      alert('Message sent successfully!');
+      toast.success('Message sent successfully');
     }
   };
 
@@ -52,6 +60,16 @@ const CompaniesPage = () => {
       c.name.toLowerCase().includes(companySearch.toLowerCase()) ||
       c.industry.toLowerCase().includes(companySearch.toLowerCase())
   );
+
+  const {
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    pageCount,
+    paginated: pagedCompanies,
+    totalItems,
+  } = usePagination(filteredCompanies, 9);
 
   return (
     <div className="space-y-6">
@@ -67,7 +85,7 @@ const CompaniesPage = () => {
         <input
           type="text"
           placeholder="Search companies by name or industry..."
-          className="pl-10 w-full h-10 px-3 bg-white text-slate-900 border border-slate-300 rounded-md focus:ring-blue-500 focus:border-blue-500 focus:outline-none shadow-sm text-sm"
+          className="pl-10 w-full h-10 px-3 bg-white text-slate-900 border border-slate-300 rounded-lg focus:ring-primary focus:border-primary focus:outline-none shadow-sm text-sm"
           value={companySearch}
           onChange={(e) => setCompanySearch(e.target.value)}
         />
@@ -102,14 +120,33 @@ const CompaniesPage = () => {
         </Card>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredCompanies.length > 0 ? (
-          filteredCompanies.map((company) => {
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <CardSkeleton key={i} className="h-48" />
+          ))}
+        </div>
+      ) : pagedCompanies.length === 0 ? (
+        <EmptyState
+          icon={Building2}
+          title="No companies found"
+          description="Try a different search term, or add your first partner company."
+          action={
+            !showForm && (
+              <Button variant="outline" onClick={() => setShowForm(true)}>
+                <Plus className="w-4 h-4 mr-2 inline" /> New Company
+              </Button>
+            )
+          }
+        />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {pagedCompanies.map((company) => {
             const adminContact = users.find((u) => u.id === company.adminId);
             return (
               <Card key={company.id} className="hover:shadow-lg transition-shadow flex flex-col h-full">
                 <div className="flex items-start justify-between mb-4">
-                  <div className="p-3 bg-blue-100 rounded-lg">
+                  <div className="p-3 bg-primary/10 rounded-lg">
                     <Building2 className="w-6 h-6 text-primary" />
                   </div>
                   <span className="text-xs text-slate-500 font-mono bg-slate-100 px-2 py-1 rounded">{company.industry}</span>
@@ -123,7 +160,7 @@ const CompaniesPage = () => {
                     <p className="text-xl font-bold text-slate-800">${company.annualRevenue.toLocaleString()}</p>
                   </div>
 
-                  <div className="bg-slate-50 p-3 rounded-md flex items-center justify-between">
+                  <div className="bg-slate-50 p-3 rounded-lg flex items-center justify-between">
                     <div className="flex items-center">
                       <UserIcon className="w-8 h-8 p-1.5 bg-slate-200 rounded-full text-slate-500 mr-2" />
                       <div>
@@ -134,7 +171,7 @@ const CompaniesPage = () => {
                     {adminContact && (
                       <button
                         onClick={() => openMessageModal(adminContact.id)}
-                        className="p-2 text-blue-600 hover:bg-blue-100 rounded-full transition-colors"
+                        className="p-2 text-primary-dark hover:bg-primary/10 rounded-full transition-colors"
                         title="Send Message"
                       >
                         <MessageCircle className="w-5 h-5" />
@@ -144,37 +181,46 @@ const CompaniesPage = () => {
                 </div>
               </Card>
             );
-          })
-        ) : (
-          <div className="col-span-full py-12 text-center text-slate-500">No companies found matching your search.</div>
-        )}
-      </div>
-
-      {messageModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-2xl">
-            <h2 className="text-lg font-bold mb-4 text-slate-800">Send Message to Admin</h2>
-            <form onSubmit={handleSendMessage}>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-slate-700 mb-1">Message</label>
-                <textarea
-                  className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  rows={4}
-                  value={messageText}
-                  onChange={(e) => setMessageText(e.target.value)}
-                  required
-                ></textarea>
-              </div>
-              <div className="flex justify-end space-x-2">
-                <Button type="button" variant="outline" onClick={() => setMessageModalOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit">Send</Button>
-              </div>
-            </form>
-          </div>
+          })}
         </div>
       )}
+
+      {!loading && (
+        <Pagination
+          page={page}
+          pageCount={pageCount}
+          pageSize={pageSize}
+          totalItems={totalItems}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+          pageSizeOptions={[9, 18, 36]}
+        />
+      )}
+
+      <Modal
+        open={messageModalOpen}
+        onClose={() => setMessageModalOpen(false)}
+        title="Send Message to Admin"
+      >
+        <form onSubmit={handleSendMessage}>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-slate-700 mb-1">Message</label>
+            <textarea
+              className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:outline-none"
+              rows={4}
+              value={messageText}
+              onChange={(e) => setMessageText(e.target.value)}
+              required
+            ></textarea>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button type="button" variant="outline" onClick={() => setMessageModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit">Send</Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

@@ -1,21 +1,58 @@
-import React, { useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Card, Button, Badge } from '../components/ui';
-import { FileSpreadsheet, Search, UserCheck, X } from 'lucide-react';
+import { Modal } from '../components/Modal';
+import { Tabs } from '../components/Tabs';
+import { Pagination } from '../components/Pagination';
+import { TableRowSkeleton } from '../components/Skeleton';
+import { EmptyState } from '../components/EmptyState';
+import { useToast } from '../context/ToastContext';
+import { usePagination } from '../hooks/usePagination';
+import { getLeadScore, TIER_STYLES } from '../utils/leadScoring';
+import { FileSpreadsheet, Search, UserCheck, Briefcase, ChevronUp, ChevronDown, Route, Flame, Plus, X, Edit2, Send } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useUploadLeads } from '../hooks/useLeads';
-import { Edit2, Trash2, CircleX, CircleCheck } from 'lucide-react';
+
+const SOURCE_OPTIONS = ['Email Campaign', 'Social Media', 'Referral', 'Website', 'Cold Call'];
+const LEAD_STATES = ['NEW', 'CONTACTED', 'QUALIFIED', 'NEGOTIATION', 'WON', 'LOST', 'CONVERTED'];
+const emptyRule = () => ({ id: `rule-${Date.now()}-${Math.random()}`, source: '', userId: '' });
+
+const hashStr = (s = '') => s.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+const COMMENT_TEMPLATES = [
+  'Called and left a voicemail.',
+  'Sent the pricing deck over email.',
+  'Had a great intro call — very interested in the AI agent feature.',
+  'Following up next week after their internal review.',
+  'Requested a custom demo for their sales team.',
+];
+const buildComments = (lead, users) => {
+  const seed = hashStr(lead.id);
+  const count = seed % 3; // 0-2 seeded comments
+  const author = users.find((u) => u.id === lead.assignedTo)?.username || 'System';
+  const now = Date.now();
+  return Array.from({ length: count }).map((_, i) => ({
+    id: `${lead.id}-c${i}`,
+    author,
+    text: COMMENT_TEMPLATES[(seed + i) % COMMENT_TEMPLATES.length],
+    ts: now - (count - i) * 3 * 24 * 60 * 60 * 1000,
+  }));
+};
 
 const LeadsPage = () => {
-  const { leads, users, updateLead, addLead, user } = useApp();
+  const { leads, users, updateLead, addLead, user, loading } = useApp();
+  const toast = useToast();
   const [filter, setFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
 
-  const [assignmentModalOpen, setAssignmentModalOpen] = useState(false);
-  const [selectedLeadId, setSelectedLeadId] = useState(null);
-  const [editingLead, setEditingLead] = useState(null);
-  const [userSearchTerm, setUserSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('assigned');
+  const [sort, setSort] = useState({ key: 'name', dir: 'asc' });
+  const [routingModalOpen, setRoutingModalOpen] = useState(false);
+  const [routingRules, setRoutingRules] = useState([]);
+
+  const [detailLead, setDetailLead] = useState(null);
+  const [detailForm, setDetailForm] = useState({ leadState: '', assignedTo: '' });
+  const [comments, setComments] = useState({});
+  const [commentDraft, setCommentDraft] = useState('');
 
   const fileInputRef = useRef();
 
@@ -45,21 +82,11 @@ const LeadsPage = () => {
         "phone": row["Phone"]
       }));
       uploadLeads.mutate({ leadsData: payload });
-      alert(`Successfully imported ${payload.length} leads!`);
-      
+      toast.success(`Successfully imported ${payload.length} leads`, `${file.name}`);
+      e.target.value = '';
     }
     reader.readAsArrayBuffer(file);
   };
-
-  const filteredLeads = leads.filter((l) => {
-    // const matchesSearch =
-    //   l.companyName.toLowerCase().includes(filter.toLowerCase()) ||
-    //   l.contactName.toLowerCase().includes(filter.toLowerCase());
-    // const matchesStatus = statusFilter === 'ALL' || l.status === statusFilter;
-    const matchesAssignment = user?.roles === 'EMPLOYEE' ? l.assignedTo === user.id : true;
-    // return matchesSearch && matchesStatus && matchesAssignment;
-    return matchesAssignment;
-  });
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -82,47 +109,97 @@ const LeadsPage = () => {
     }
   };
 
-  const openAssignmentModal = (leadId) => {
-    setSelectedLeadId(leadId);
-    setUserSearchTerm('');
-    setAssignmentModalOpen(true);
+  const toggleSort = (key) => {
+    setSort((prev) => (prev.key === key ? { key, dir: prev.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }));
   };
 
-  const handleUpdateLead = () => {  
-    if (selectedLeadId) {
-      updateLead(selectedLeadId, editingLead);
-      setAssignmentModalOpen(false);
-    }
-  };
-
-  const availableUsers = users.filter(
-    (u) =>
-      u.accountActive &&
-      (u.role?.name === 'EMPLOYEE' || u.role?.name === 'ADMIN') &&
-      (u.username.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
-        (u.email || '').toLowerCase().includes(userSearchTerm.toLowerCase()))
+  const SortHeader = ({ sortKey, children }) => (
+    <button
+      onClick={() => toggleSort(sortKey)}
+      className="flex items-center gap-1 text-left hover:text-slate-800 transition-colors"
+    >
+      {children}
+      {sort.key === sortKey ? (
+        sort.dir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />
+      ) : (
+        <ChevronDown className="w-3 h-3 opacity-20" />
+      )}
+    </button>
   );
 
-  const handleEditLead = (lead) => {
-    if (lead === null) {
-      setEditingLead(null);
-      return;
-    } else {
-      setEditingLead({
-        id: lead.id,
-        name: lead.name,
-        email: lead.email,
-        phone: lead.phone,
-        leadState: lead.leadState,
-        assignedTo: lead.assignedTo
-      });
-    }
+  const filteredLeads = useMemo(() => {
+    const term = filter.trim().toLowerCase();
+    const filtered = leads.filter((l) => {
+      const matchesSearch =
+        !term ||
+        l.name?.toLowerCase().includes(term) ||
+        l.email?.toLowerCase().includes(term) ||
+        l.leadSource?.toLowerCase().includes(term);
+      const matchesStatus = statusFilter === 'ALL' || l.leadState?.toUpperCase() === statusFilter;
+      const matchesAssignment = user?.roles === 'EMPLOYEE' ? l.assignedTo === user.id : true;
+      const matchesTab =
+        user?.roles === 'EMPLOYEE'
+          ? true
+          : activeTab === 'assigned'
+          ? !!l.assignedTo
+          : !l.assignedTo;
+      return matchesSearch && matchesStatus && matchesAssignment && matchesTab;
+    });
+
+    const dir = sort.dir === 'asc' ? 1 : -1;
+    return [...filtered].sort((a, b) => {
+      const av = (sort.key === 'status' ? a.leadState : a.name) || '';
+      const bv = (sort.key === 'status' ? b.leadState : b.name) || '';
+      return av.localeCompare(bv) * dir;
+    });
+  }, [leads, filter, statusFilter, activeTab, user, sort]);
+
+  const {
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    pageCount,
+    paginated: pagedLeads,
+    totalItems,
+  } = usePagination(filteredLeads, 10);
+
+  const openDetail = (lead) => {
+    setDetailLead(lead);
+    setDetailForm({ leadState: lead.leadState, assignedTo: lead.assignedTo || '' });
+    setCommentDraft('');
+    setComments((prev) => (prev[lead.id] ? prev : { ...prev, [lead.id]: buildComments(lead, users) }));
   };
 
-  const handleLeadAssignment = (u) => {
-    setEditingLead({ ...editingLead, assignedTo: u.id });
-    setAssignmentModalOpen(false);
-  }
+  const closeDetail = () => setDetailLead(null);
+
+  const handleSaveDetail = (e) => {
+    e.preventDefault();
+    updateLead(detailLead.id, detailForm);
+    toast.success('Lead updated successfully');
+    closeDetail();
+  };
+
+  const handleAddComment = () => {
+    const text = commentDraft.trim();
+    if (!text || !detailLead) return;
+    const entry = { id: `${detailLead.id}-c${Date.now()}`, author: user?.sub || user?.username || 'You', text, ts: Date.now() };
+    setComments((prev) => ({ ...prev, [detailLead.id]: [...(prev[detailLead.id] || []), entry] }));
+    setCommentDraft('');
+  };
+
+  const addRoutingRule = () => setRoutingRules((prev) => [...prev, emptyRule()]);
+  const updateRoutingRule = (id, patch) =>
+    setRoutingRules((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+  const removeRoutingRule = (id) => setRoutingRules((prev) => prev.filter((r) => r.id !== id));
+  const saveRoutingRules = (e) => {
+    e.preventDefault();
+    setRoutingModalOpen(false);
+    toast.success('Routing rules saved', `${routingRules.filter((r) => r.source && r.userId).length} active rule(s)`);
+  };
+
+  const columnCount = 6 + (user?.roles === 'EMPLOYEE' ? 1 : 0);
+  const detailComments = detailLead ? comments[detailLead.id] || [] : [];
 
   return (
     <div className="space-y-6">
@@ -131,23 +208,15 @@ const LeadsPage = () => {
           {user?.role?.name === 'EMPLOYEE' ? 'My Leads' : 'All Leads'}
         </h1>
         {(user?.roles === 'ADMIN' || user?.roles === 'ROOT') && (
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex space-x-2 bg-slate-200 p-1 rounded-lg">
-              <button
-                onClick={() => setActiveTab('assigned')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'assigned' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
-              >
-              Assigned
-            </button>
-            <button
-              onClick={() => setActiveTab('unassigned')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'unassigned' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
-            >
-              Un-assigned
-            </button>
-          </div>
-        </div>)
-        }
+          <Tabs
+            tabs={[
+              { value: 'assigned', label: 'Assigned' },
+              { value: 'unassigned', label: 'Un-assigned' },
+            ]}
+            active={activeTab}
+            onChange={setActiveTab}
+          />
+        )}
       </div>
 
       <Card>
@@ -156,15 +225,15 @@ const LeadsPage = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
             <input
               type="text"
-              placeholder="Search companies or contacts..."
-              className="pl-10 w-full h-10 px-3 bg-white text-slate-900 border border-slate-300 rounded-md focus:ring-blue-500 focus:border-blue-500 focus:outline-none shadow-sm text-sm"
+              placeholder="Search by name, email, or source..."
+              className="pl-10 w-full h-10 px-3 bg-white text-slate-900 border border-slate-300 rounded-lg focus:ring-primary focus:border-primary focus:outline-none shadow-sm text-sm"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
             />
           </div>
           <div className="w-full md:w-48">
             <select
-              className="w-full h-10 px-3 border border-slate-300 rounded-md focus:ring-blue-500 focus:border-blue-500 focus:outline-none shadow-sm bg-white text-slate-900 text-sm"
+              className="w-full h-10 px-3 border border-slate-300 rounded-lg focus:ring-primary focus:border-primary focus:outline-none shadow-sm bg-white text-slate-900 text-sm"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
@@ -177,8 +246,11 @@ const LeadsPage = () => {
             </select>
           </div>
           {(user?.roles === 'ADMIN' || user?.roles === 'ROOT') && (
-            <div>
+            <div className="flex gap-2">
               <input type='file' ref={fileInputRef} accept='.xlsx,.xls' style={{display: 'none'}} onChange={handleFileChange}/>
+              <Button variant="outline" onClick={() => setRoutingModalOpen(true)} className='flex items-center'>
+                <Route className="w-4 h-4 mr-2" /> Routing Rules
+              </Button>
               <Button variant="outline" onClick={handleImport} className='flex items-center'>
                 <FileSpreadsheet className="w-4 h-4 mr-2" /> Import Excel
               </Button>
@@ -186,164 +258,283 @@ const LeadsPage = () => {
           )}
         </div>
 
-        <div className="overflow-x-auto border rounded-lg">
+        <div className="overflow-x-auto border border-slate-200 rounded-xl">
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Info</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">State</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                  <SortHeader sortKey="name">Info</SortHeader>
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                  <SortHeader sortKey="status">State</SortHeader>
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Source</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Score</th>
                 {(user?.roles === 'EMPLOYEE') && <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Phone</th>}
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Assigned To</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-slate-200">
-              {filteredLeads.map((lead) => (
+              {loading ? (
+                <TableRowSkeleton columns={columnCount} />
+              ) : pagedLeads.length === 0 ? (
+                <tr>
+                  <td colSpan={columnCount}>
+                    <EmptyState
+                      icon={Briefcase}
+                      title="No leads found"
+                      description="Try adjusting your search or filters, or import a new batch of leads."
+                    />
+                  </td>
+                </tr>
+              ) : (
+                pagedLeads.map((lead) => (
                 <tr key={lead.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-4">
-                    <div className="text-sm font-semibold text-slate-900">{lead.name}</div>
+                    <button onClick={() => openDetail(lead)} className="text-sm font-semibold text-slate-900 hover:text-primary-dark transition-colors">
+                      {lead.name}
+                    </button>
                     <div className="text-sm text-slate-500">{lead.email}</div>
-                    {/* <div className="text-xs text-slate-400">{lead.email}</div> */}
                   </td>
-                  {/* <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-700">${lead.value.toLocaleString()}</td> */}
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {editingLead?.id === lead.id ? (
-                      <div className="relative">
-                        <select
-                          value={editingLead ? editingLead.leadState : lead.leadState}
-                          onChange={(e) => setEditingLead({ ...editingLead, leadState: e.target.value })}
-                          className="text-xs border-slate-200 bg-white shadow-sm rounded-full py-1 pl-2 pr-6 focus:ring-blue-500 focus:border-blue-500 cursor-pointer appearance-none border"
-                          style={{
-                            color:
-                              getStatusColor(lead.status) === 'green' ? '#15803d' : getStatusColor(lead.status) === 'red' ? '#b91c1c' : '#334155',
-                          }}
-                        >
-                          {['NEW', 'CONTACTED', 'QUALIFIED', 'NEGOTIATION', 'WON', 'LOST', 'CONVERTED'].map((s) => (
-                            <option key={s} value={s}>
-                              {s}
-                            </option>
-                          ))}
-                        </select>
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
-                          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </div>
-                      </div>
-                    ) : (
-                      <Badge color={getStatusColor(lead.leadState.toUpperCase())}>{lead.leadState}</Badge>
-                    )}
+                    <Badge color={getStatusColor(lead.leadState.toUpperCase())}>{lead.leadState}</Badge>
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm font-semibold text-slate-900">{lead.leadSource}</div>
                     <div className="text-sm text-slate-500">{lead.leadSubSource}</div>
-                    {/* <div className="text-xs text-slate-400">{lead.leadSubSource}</div> */}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {(() => {
+                      const { score, tier } = getLeadScore(lead);
+                      return (
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${TIER_STYLES[tier]}`}>
+                          <Flame className="w-3 h-3" /> {score} · {tier}
+                        </span>
+                      );
+                    })()}
                   </td>
                   {(user?.roles === 'EMPLOYEE') && <td className="px-6 py-4">
                     <div className="text-sm font-semibold text-slate-900">{lead.phone}</div>
                   </td>}
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {editingLead?.id === lead.id && (user?.roles === 'ADMIN' || user?.roles === 'SUPERUSER') ? (
-                      <button
-                        onClick={() => openAssignmentModal(lead.id)}
-                        className="flex items-center space-x-2 text-sm text-slate-700 hover:text-blue-600 px-3 py-1.5 rounded border border-transparent hover:border-blue-200 hover:bg-blue-50 transition-all"
-                      >
-                        <UserCheck className="w-4 h-4 text-slate-400" />
-                        <span>{users.find((u) => u.id === editingLead.assignedTo)?.username || 'Unassigned'}</span>
-                      </button>
-                    ) : (
-                      <div className="flex items-center">
-                        <div className="h-6 w-6 rounded-full bg-slate-200 flex items-center justify-center text-xs text-slate-600 font-bold mr-2">
-                          {users.find((u) => u.id === lead.assignedTo)?.username?.charAt(0)?.toUpperCase() || '?'}
-                        </div>
-                        <span className="text-sm text-slate-600">
-                          {users.find((u) => u.id === lead.assignedTo)?.username || 'Unassigned'}
-                        </span>
+                    <div className="flex items-center">
+                      <div className="h-6 w-6 rounded-full bg-slate-200 flex items-center justify-center text-xs text-slate-600 font-bold mr-2">
+                        {users.find((u) => u.id === lead.assignedTo)?.username?.charAt(0)?.toUpperCase() || '?'}
                       </div>
-                    )}
+                      <span className="text-sm text-slate-600">
+                        {users.find((u) => u.id === lead.assignedTo)?.username || 'Unassigned'}
+                      </span>
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    {
-                      editingLead?.id === lead.id ? <button className="text-blue-600 hover:text-blue-900 mr-4" onClick={() => handleEditLead(null)}>
-                        <CircleX className="w-5 h-5" />
-                      </button> : <button className="text-blue-600 hover:text-blue-900 mr-4" onClick={() => handleEditLead(lead)}>
-                        <Edit2 className="w-5 h-5" />
-                      </button>
-                    }
-                    {
-                      editingLead?.id === lead.id ? <button className="text-blue-600 hover:text-blue-900 mr-4" onClick={() => handleUpdateLead()}>
-                        <CircleCheck className="w-5 h-5" />
-                      </button> : <button className={`text-red-600 hover:opacity-80`}>
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    }
+                    <button onClick={() => openDetail(lead)} className="text-primary-dark hover:text-ink flex items-center gap-1.5">
+                      <Edit2 className="w-4 h-4" /> View / Edit
+                    </button>
                   </td>
                 </tr>
-              ))}
-              {filteredLeads.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-slate-500">
-                    No leads found matching your filters.
-                  </td>
-                </tr>
+                ))
               )}
             </tbody>
           </table>
         </div>
+
+        {!loading && (
+          <Pagination
+            page={page}
+            pageCount={pageCount}
+            pageSize={pageSize}
+            totalItems={totalItems}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
+        )}
       </Card>
 
-      {assignmentModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-2xl h-[500px] flex flex-col">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold text-slate-800">Assign Lead</h2>
-              <button onClick={() => setAssignmentModalOpen(false)} className="text-slate-500 hover:text-slate-800">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="mb-4 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search employees by name..."
-                className="w-full pl-9 pr-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm outline-none"
-                value={userSearchTerm}
-                onChange={(e) => setUserSearchTerm(e.target.value)}
-                autoFocus
-              />
-            </div>
-
-            <div className="flex-1 overflow-y-auto border border-slate-100 rounded-md">
-                {availableUsers.length > 0 ? (
-                availableUsers.map((u) => (
-                  <button
-                    key={u.id}
-                    onClick={() => handleLeadAssignment(u)}
-                    className="w-full text-left px-4 py-3 hover:bg-slate-50 border-b border-slate-100 last:border-0 flex items-center justify-between group"
-                  >
-                    <div className="flex items-center">
-                      <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold mr-3">
-                        {u.username?.charAt(0)?.toUpperCase()}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-slate-800">{u.username}</p>
-                        <p className="text-xs text-slate-500">
-                          {u.email || 'No email'} • {u.role?.name}
-                        </p>
-                      </div>
-                    </div>
-                    <span className="text-xs text-blue-600 opacity-0 group-hover:opacity-100 font-medium">Assign</span>
-                  </button>
-                ))
-              ) : (
-                <div className="p-8 text-center text-slate-500 text-sm">No users found.</div>
-              )}
-            </div>
+      <Modal
+        open={!!detailLead}
+        onClose={closeDetail}
+        title={detailLead?.name}
+        subtitle={detailLead?.email}
+        icon={UserCheck}
+        size="lg"
+        footer={
+          <div className="w-full flex items-center gap-2">
+            <input
+              type="text"
+              value={commentDraft}
+              onChange={(e) => setCommentDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddComment();
+                }
+              }}
+              placeholder="Log a call, note, or update…"
+              className="flex-1 h-10 px-4 bg-slate-50 border border-slate-200 rounded-full focus:ring-primary focus:border-primary outline-none text-sm"
+            />
+            <button
+              type="button"
+              onClick={handleAddComment}
+              disabled={!commentDraft.trim()}
+              className="w-10 h-10 rounded-full bg-ink text-white flex items-center justify-center hover:bg-primary hover:text-ink transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+            >
+              <Send className="w-4 h-4" />
+            </button>
           </div>
-        </div>
-      )}
+        }
+      >
+        {detailLead && (
+          <>
+            <form onSubmit={handleSaveDetail} className="space-y-4 pb-4 mb-4 border-b border-slate-100">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-xs text-slate-400 uppercase tracking-wider mb-0.5">Phone</p>
+                  <p className="text-slate-800">{detailLead.phone || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400 uppercase tracking-wider mb-0.5">Source</p>
+                  <p className="text-slate-800">
+                    {detailLead.leadSource}
+                    {detailLead.leadSubSource ? ` · ${detailLead.leadSubSource}` : ''}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Status</label>
+                  <select
+                    value={detailForm.leadState}
+                    onChange={(e) => setDetailForm({ ...detailForm, leadState: e.target.value })}
+                    className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:ring-primary focus:border-primary outline-none"
+                  >
+                    {LEAD_STATES.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Assigned To</label>
+                  {(user?.roles === 'ADMIN' || user?.roles === 'ROOT') ? (
+                    <select
+                      value={detailForm.assignedTo}
+                      onChange={(e) => setDetailForm({ ...detailForm, assignedTo: e.target.value })}
+                      className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:ring-primary focus:border-primary outline-none"
+                    >
+                      <option value="">Unassigned</option>
+                      {users
+                        .filter((u) => u.accountActive && (u.role?.name === 'EMPLOYEE' || u.role?.name === 'ADMIN'))
+                        .map((u) => (
+                          <option key={u.id} value={u.id}>
+                            {u.username}
+                          </option>
+                        ))}
+                    </select>
+                  ) : (
+                    <p className="px-3 py-2 text-sm text-slate-600 bg-slate-50 rounded-lg">
+                      {users.find((u) => u.id === detailLead.assignedTo)?.username || 'Unassigned'}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-end">
+                <Button type="submit" className="!px-4 !py-2 text-sm">
+                  Save Changes
+                </Button>
+              </div>
+            </form>
+
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Activity &amp; Comments</p>
+            {detailComments.length === 0 ? (
+              <p className="text-sm text-slate-400 italic">No comments yet — be the first to log an update.</p>
+            ) : (
+              <div className="space-y-3">
+                {detailComments.map((c) => (
+                  <div key={c.id} className="flex items-start gap-3">
+                    <div className="w-7 h-7 rounded-full bg-primary/10 text-primary-dark flex items-center justify-center text-xs font-bold shrink-0">
+                      {c.author?.charAt(0)?.toUpperCase()}
+                    </div>
+                    <div className="bg-slate-50 rounded-lg px-3 py-2 flex-1">
+                      <div className="flex justify-between items-baseline gap-2">
+                        <span className="text-xs font-semibold text-slate-700">{c.author}</span>
+                        <span className="text-[10px] text-slate-400 shrink-0">{new Date(c.ts).toLocaleString()}</span>
+                      </div>
+                      <p className="text-sm text-slate-700 mt-0.5">{c.text}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </Modal>
+
+      <Modal
+        open={routingModalOpen}
+        onClose={() => setRoutingModalOpen(false)}
+        title="Auto-Routing Rules"
+        subtitle="Automatically assign new leads based on their source."
+        icon={Route}
+        size="lg"
+      >
+        <form onSubmit={saveRoutingRules}>
+          <div className="space-y-3 mb-4">
+            {routingRules.length === 0 && (
+              <p className="text-sm text-slate-500 italic">No rules yet — add one below to start auto-assigning leads.</p>
+            )}
+            {routingRules.map((rule) => (
+              <div key={rule.id} className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg p-3">
+                <span className="text-xs text-slate-500 shrink-0">If source is</span>
+                <select
+                  value={rule.source}
+                  onChange={(e) => updateRoutingRule(rule.id, { source: e.target.value })}
+                  className="flex-1 px-2 py-1.5 text-sm bg-white border border-slate-200 rounded-lg focus:ring-primary focus:border-primary outline-none"
+                >
+                  <option value="">Select source…</option>
+                  {SOURCE_OPTIONS.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+                <span className="text-xs text-slate-500 shrink-0">assign to</span>
+                <select
+                  value={rule.userId}
+                  onChange={(e) => updateRoutingRule(rule.id, { userId: e.target.value })}
+                  className="flex-1 px-2 py-1.5 text-sm bg-white border border-slate-200 rounded-lg focus:ring-primary focus:border-primary outline-none"
+                >
+                  <option value="">Select user…</option>
+                  {users
+                    .filter((u) => u.accountActive && (u.role?.name === 'EMPLOYEE' || u.role?.name === 'ADMIN'))
+                    .map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.username}
+                      </option>
+                    ))}
+                </select>
+                <button type="button" onClick={() => removeRoutingRule(rule.id)} className="text-slate-400 hover:text-red-600 shrink-0">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <button type="button" onClick={addRoutingRule} className="text-xs text-primary-dark hover:text-ink font-medium flex items-center gap-1 mb-6">
+            <Plus className="w-3.5 h-3.5" /> Add Rule
+          </button>
+
+          <div className="flex justify-end space-x-2 pt-4 border-t border-slate-100">
+            <Button type="button" variant="outline" onClick={() => setRoutingModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit">Save Rules</Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

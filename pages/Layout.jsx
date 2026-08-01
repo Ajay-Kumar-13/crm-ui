@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { LoadingScreen } from '../components/ui';
 import {
   LayoutDashboard,
   Users,
@@ -11,10 +10,15 @@ import {
   Menu,
   ShieldAlert,
   Bell,
+  Sparkles,
+  MessageCircle,
+  Mail,
+  Receipt,
+  Palette,
 } from 'lucide-react';
 
 const Layout = () => {
-  const { user, logout, triggerBackendError, notifications, markNotificationAsRead, loading } = useApp();
+  const { user, logout, triggerBackendError, notifications, markNotificationAsRead } = useApp();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -33,7 +37,7 @@ const Layout = () => {
       to={to}
       className={({ isActive }) =>
         `flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-          isActive ? 'bg-blue-700 text-white' : 'text-blue-100 hover:bg-blue-800'
+          isActive ? 'bg-primary text-ink font-semibold' : 'text-white/60 hover:bg-white/5 hover:text-white'
         }`
       }
       onClick={() => setSidebarOpen(false)}
@@ -43,26 +47,28 @@ const Layout = () => {
     </NavLink>
   );
 
-  if (loading) {
-    return <LoadingScreen message="Loading your data..." />;
-  }
+  const NavSectionLabel = ({ children }) => (
+    <p className="px-4 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-wider text-white/30">{children}</p>
+  );
 
   return (
     <div className="flex h-screen bg-slate-100 overflow-hidden">
-      <div className="md:hidden fixed w-full bg-primary text-white z-20 flex justify-between items-center p-4 shadow-md">
-        <span className="font-bold text-xl">Nexus CRM</span>
+      <div className="md:hidden fixed w-full bg-ink text-white z-20 flex justify-between items-center p-4 shadow-md">
+        <span className="font-bold text-xl">thrive<b className="text-primary">Q</b></span>
         <button onClick={() => setSidebarOpen(!sidebarOpen)}><Menu /></button>
       </div>
 
       <aside
         className={`
-        fixed inset-y-0 left-0 z-10 w-64 bg-slate-900 text-white transform transition-transform duration-200 ease-in-out
+        fixed inset-y-0 left-0 z-10 w-64 bg-ink text-white transform transition-transform duration-200 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 shadow-xl
         flex flex-col
       `}
       >
         <div className="p-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight text-white hidden md:block">Nexus CRM</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-white hidden md:block">
+            thrive<b className="text-primary">Q</b>
+          </h1>
         </div>
 
         <nav className="px-4 space-y-2 mt-4 flex-1">
@@ -77,12 +83,29 @@ const Layout = () => {
           {user?.roles === 'ROOT' && (
             <NavItem to="/companies" icon={Building2} label="Companies" />
           )}
+
+          <NavSectionLabel>Growth Tools</NavSectionLabel>
+          <NavItem to="/ai-agent" icon={Sparkles} label="AI Agent" />
+          <NavItem to="/whatsapp" icon={MessageCircle} label="WhatsApp" />
+          {(user?.roles === 'ADMIN' || user?.roles === 'ROOT') && (
+            <NavItem to="/email" icon={Mail} label="Email" />
+          )}
+          {user?.roles === 'ROOT' && (
+            <NavItem to="/billing" icon={Receipt} label="Billing" />
+          )}
+
+          {user?.roles === 'ROOT' && (
+            <>
+              <NavSectionLabel>Workspace</NavSectionLabel>
+              <NavItem to="/settings" icon={Palette} label="White Label" />
+            </>
+          )}
         </nav>
 
         <div className="px-4 py-2 border-t border-slate-800">
           <button
             onClick={() => setNotificationsOpen(!notificationsOpen)}
-            className="w-full flex items-center justify-between text-blue-100 hover:text-white py-2"
+            className="w-full flex items-center justify-between text-white/60 hover:text-white py-2"
           >
             <div className="flex items-center">
               <Bell className="w-5 h-5 mr-3" />
@@ -106,7 +129,7 @@ const Layout = () => {
                       setExpandedNotifId(expandedNotifId === n.id ? null : n.id);
                     }}
                     className={`text-xs p-2 mb-2 rounded cursor-pointer transition-colors ${
-                      n.isRead ? 'bg-slate-700/50 text-slate-400' : 'bg-slate-700 text-white border-l-2 border-blue-500'
+                      n.isRead ? 'bg-slate-700/50 text-slate-400' : 'bg-slate-700 text-white border-l-2 border-primary'
                     } hover:bg-slate-700/80`}
                   >
                     <p className="font-bold mb-1 flex justify-between">
@@ -123,7 +146,7 @@ const Layout = () => {
 
         <div className="w-full p-4 border-t border-slate-800">
           <div className="flex items-center space-x-3 mb-4 px-4">
-            <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-xs font-bold text-white">
+            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-xs font-bold text-ink">
               {user?.username?.charAt(0)?.toUpperCase()}
             </div>
             <div className="overflow-hidden">

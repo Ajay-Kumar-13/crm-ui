@@ -1,12 +1,18 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
+import { ToastProvider } from './context/ToastContext';
 import Login from './pages/Login';
 import Layout from './pages/Layout';
 import Dashboard from './pages/Dashboard';
 import UsersPage from './pages/Users';
 import LeadsPage from './pages/Leads';
 import CompaniesPage from './pages/Companies';
+import AIAgent from './pages/AIAgent';
+import WhatsApp from './pages/WhatsApp';
+import EmailPage from './pages/Email';
+import Billing from './pages/Billing';
+import Settings from './pages/Settings';
 import Trap from './pages/Trap';
 import { LoadingScreen } from './components/ui';
 
@@ -79,6 +85,51 @@ const AppRoutes = () => {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="ai-agent"
+          element={
+            <ProtectedRoute>
+              <AIAgent />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="whatsapp"
+          element={
+            <ProtectedRoute>
+              <WhatsApp />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="email"
+          element={
+            <ProtectedRoute roles={['ADMIN', 'ROOT']}>
+              <EmailPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="billing"
+          element={
+            <ProtectedRoute roles={['ROOT']}>
+              <Billing />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="settings"
+          element={
+            <ProtectedRoute roles={['ROOT']}>
+              <Settings />
+            </ProtectedRoute>
+          }
+        />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
@@ -88,11 +139,13 @@ const AppRoutes = () => {
 
 const App = () => {
   return (
-    <AppProvider>
-      <BrowserRouter basename="/app">
-        <AppRoutes />
-      </BrowserRouter>
-    </AppProvider>
+    <ToastProvider>
+      <AppProvider>
+        <BrowserRouter basename="/app">
+          <AppRoutes />
+        </BrowserRouter>
+      </AppProvider>
+    </ToastProvider>
   );
 };
 

@@ -86,6 +86,11 @@ export const AppProvider = ({ children }) => {
 
   useEffect(() => {
       console.log("PROFILE_ACTIVE: ", import.meta.env.VITE_PROFILE_ACTIVE);
+      // log all the data fetched from the backend
+      console.log("CRM_USERS: ", crm_users);
+      console.log("CRM_AUTHORITIES: ", crm_authorities);
+      console.log("CRM_ROLES: ", crm_roles);
+      console.log("LEADS_DATA: ", leadsData);
       if(!usersLoading && !rolesLoading && !authoritiesLoading && !leadsLoading && crm_users && crm_authorities && crm_roles && leadsData) {
         setUsers(crm_users);
         setLeads(leadsData);

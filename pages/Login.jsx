@@ -36,14 +36,16 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary to-blue-900 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-xl shadow-2xl p-8">
+    <div className="min-h-screen bg-[#fafafa] flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.1),0_2px_6px_rgba(0,0,0,0.06)] border border-[#f0f0f0] p-8">
         <div className="text-center mb-8">
-          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Users className="w-6 h-6 text-primary" />
+          <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Users className="w-6 h-6 text-primary-dark" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">Welcome Back</h1>
-          <p className="text-slate-500 mt-2">Sign in to Nexus CRM</p>
+          <h1 className="text-2xl font-bold text-ink">Welcome Back</h1>
+          <p className="text-slate-500 mt-2">
+            Sign in to thrive<b className="text-primary">Q</b>
+          </p>
         </div>
 
         <form onSubmit={handleSubmit}>
